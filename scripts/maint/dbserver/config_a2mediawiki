@@ -1,0 +1,3 @@
+# Uncomments (third) line so that it reads 'Alias /mediawiki /var/lib/mediawiki'
+
+s/#\(.*Alias \/mediawiki \/var\/lib\/mediawiki\)/\1/

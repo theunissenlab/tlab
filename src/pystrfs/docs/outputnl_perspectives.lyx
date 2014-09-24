@@ -1,0 +1,319 @@
+#LyX 1.6.5 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass amsbook
+\use_default_options false
+\begin_modules
+theorems-ams
+eqs-within-sections
+figs-within-sections
+\end_modules
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\spacing onehalf
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 1
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+
+\series bold
+Convergent Perspectives on the Output Nonlinearity
+\end_layout
+
+\begin_layout Standard
+Mike Schachter
+\end_layout
+
+\begin_layout Section
+As the Inverse Link Function of a GLM
+\end_layout
+
+\begin_layout Standard
+A probability distribution is in the exponential family if it can be written
+ in the following canonical form:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+P(Y=y|\mathbf{\theta})=exp(y\mathbf{\theta}+b(\theta)+d(y))\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The canonical parameter 
+\begin_inset Formula $\theta$
+\end_inset
+
+ is typically a function of the distribution's mean, 
+\begin_inset Formula $\mu$
+\end_inset
+
+.
+ In these cases we can write 
+\begin_inset Formula $\theta(\mu)$
+\end_inset
+
+ instead of 
+\begin_inset Formula $\theta$
+\end_inset
+
+.
+ When in canonical form, the expected value of 
+\begin_inset Formula $Y$
+\end_inset
+
+ is easily computed as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+E[Y]=\mu=\frac{db(\theta)}{d\theta}\]
+
+\end_inset
+
+A Generalized Linear Model (GLM) is a statistical regression model for a
+ dataset 
+\begin_inset Formula $\mathcal{D}=\{(\mathbf{x}_{i},y_{i})\}$
+\end_inset
+
+ that relates the random variables 
+\begin_inset Formula $X_{i}\in\mathcal{X}$
+\end_inset
+
+ and 
+\begin_inset Formula $Y_{i}\in\mathcal{Y}$
+\end_inset
+
+.
+ The feature space 
+\begin_inset Formula $\mathcal{X}\subset\mathbb{R}^{D}$
+\end_inset
+
+, and the response space 
+\begin_inset Formula $\mathcal{Y}$
+\end_inset
+
+ can be a discrete or continuous.
+ A parameterized exponential family distribution characterizes each response
+ variable 
+\begin_inset Formula $Y_{i}$
+\end_inset
+
+, each with a different parameter 
+\begin_inset Formula $\theta_{i}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+The key feature of a GLM is that the response mean 
+\begin_inset Formula $\mu_{i}=E[Y_{i}]$
+\end_inset
+
+ and 
+\begin_inset Formula $\mathbf{x}_{i}$
+\end_inset
+
+ are related as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+g(\mu_{i})=\mathbf{x}_{i}\mathbf{\beta}^{T}\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\begin_inset Formula $\mathbf{\beta}\in\mathbb{R}^{D}$
+\end_inset
+
+ are the linear parameters and 
+\begin_inset Formula $g:\mathbb{R}\rightarrow\mathbb{R}$
+\end_inset
+
+ is called the link function.
+ The link function linearizes the expectation-space of the response variable;
+ it is assumed to be monotone (thus invertible) and differentiable.
+ It's somewhat arbitrary.
+ The canonical link function is 
+\begin_inset Formula $g(\mu_{i})=\theta(\mu_{i})$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+In STRF estimation, feature space 
+\begin_inset Formula $\mathcal{X}$
+\end_inset
+
+ is the set of preprocessed stimuli, a high dimensional space of real numbers.
+ The linear parameters comprise our STRF.
+ There are two interpretations of the response variable distribution and
+ associated link function, given below.
+\end_layout
+
+\begin_layout Subsection
+Bernoulli Interpretation of Neural Response
+\end_layout
+
+\begin_layout Standard
+The neural response at a time 
+\begin_inset Formula $t$
+\end_inset
+
+ following the stimulus presentation can be considered a binary random variable
+ 
+\begin_inset Formula $Y_{t}$
+\end_inset
+
+, spike (
+\begin_inset Formula $Y_{t}=1$
+\end_inset
+
+) or no spike (
+\begin_inset Formula $Y_{t}=0$
+\end_inset
+
+).
+ The distribution of each 
+\begin_inset Formula $Y_{t}\in\{0,1\}$
+\end_inset
+
+ is a Bernoulli distribution with parameter 
+\begin_inset Formula $p_{t}$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+P(Y_{t}=y)=p_{t}^{y}(1-p_{t})^{1-y}\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The Bernoulli distribution is a special case of the binomial distribution,
+ and can be rewritten as a canonical exponential family:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+P(Y_{t}=y)=exp(y\theta+log(1-\mu))\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where the canonical link 
+\begin_inset Formula $\theta(\mu)=(1+e^{-\mu})^{-1}$
+\end_inset
+
+, the logistic sigmoid.
+\end_layout
+
+\begin_layout Standard
+In a linear-nonlinear model, the probability of spiking for a stimulus 
+\begin_inset Formula $\mathbf{x}_{i}$
+\end_inset
+
+ at time 
+\begin_inset Formula $t$
+\end_inset
+
+ is given by a nonlinear transformation of the linearly transformed stimulus:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+P(Y_{t}=1)=f(\mathbf{x}_{t}\beta^{T})\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The expected response at time 
+\begin_inset Formula $t$
+\end_inset
+
+ is 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+
+\begin_inset Formula $\mu_{t}=E[Y_{t}]=f(\mathbf{x}_{t}\mathbf{\beta}^{T})$
+\end_inset
+
+.
+ Therefore the link function of a Bernoulli GLM is the inverse of 
+\begin_inset Formula $f$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+g(\mu_{t})=f^{-1}(\mu_{t})=\mathbf{x}_{i}\mathbf{\beta}^{T}\]
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

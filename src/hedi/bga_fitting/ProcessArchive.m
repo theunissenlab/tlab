@@ -1,0 +1,10 @@
+function out=ProcessArchive(a);
+times=unique(a);
+nt=length(times);
+out=[];
+for i=1:nt;
+    ti=times(i);
+    b=a(find(a(:,1)==ti),:);
+    [m,im]=min(b(:,end));
+    out=[out;b(im,:)];
+end;

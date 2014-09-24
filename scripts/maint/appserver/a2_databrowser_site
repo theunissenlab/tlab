@@ -1,0 +1,46 @@
+<VirtualHost *:80>
+    ServerName app.fet.berkeley.edu
+    ServerAlias databrowser
+    ServerAdmin channing_moore@berkeley.edu
+    
+    DocumentRoot /var/www/
+    
+    Alias /data/ /auto/fdata/channing/DB/
+    Alias /doc/ /usr/share/doc/
+    
+    <Directory />
+		Options FollowSymLinks
+		AllowOverride None
+    </Directory>
+
+    <Directory /var/www/>
+		Options Indexes FollowSymLinks MultiViews
+		Order allow,deny
+		allow from all
+    </Directory>
+
+    WSGIScriptAlias / /usr/local/www/wsgi-scripts/databrowser.wsgi
+    WSGIScriptAlias /test /usr/local/www/wsgi-scripts/test.wsgi
+
+    <Directory /usr/local/www/wsgi-scripts>
+		Order allow,deny
+		Allow from all
+    </Directory>
+
+    <Directory /auto/fdata/channing/DB/>
+		Options FollowSymLinks
+		AllowOverride None
+		Order deny,allow
+		Allow from all
+    </Directory>
+
+    ErrorLog /var/log/apache2/error.log
+
+    # Possible values include: debug, info, notice, warn, error, crit,
+    # alert, emerg.
+    LogLevel warn
+    #LogLevel debug
+
+    CustomLog /var/log/apache2/access.log combined
+
+</VirtualHost>

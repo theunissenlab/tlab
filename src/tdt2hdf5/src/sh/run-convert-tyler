@@ -1,0 +1,26 @@
+#!/bin/bash
+
+function run_bird {
+
+    bird_name=$1
+    tank_root=$2
+    stim_root=$3
+
+    tank_dir="$tank_root/$bird_name"
+    stim_file="$stim_root/$bird_name/stimProtocol.txt"
+    output_dir="/tmp/tdt2hdf5/tlee/$bird_name"
+    log_file="$output_dir/tdt2hdf5.log"
+
+    rm -fr $output_dir
+    mkdir -p $output_dir
+
+    python convert_tank.py --tank_dir $tank_dir --stim_file $stim_file --output_dir $output_dir --check_zscore 0 &> $log_file &
+}
+
+troot="/auto/fdata/tlee/recordings"
+sroot="/auto/fdata/tlee/stims"
+
+for bname in "BlaWhi0766M"
+do
+    run_bird $bname $troot $sroot
+done

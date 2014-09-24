@@ -1,0 +1,18 @@
+rz=[];
+ndz=size(dz,1);
+for k=1:ndz;
+    alpha0=dz(k,2);
+    beta0=dz(k,3);
+    gamma=24000;
+    ttime=linspace(0,0.15,10);
+    alpha=alpha0+0*ttime;
+    beta=beta0+0*ttime;
+    y=smBGAs(0.15,24000,alpha',ttime',beta',ttime');
+    fy=timefreq(y,44100,'stft');
+    ffy=mean(fy.spec,2);
+    fcenter=3000;
+    fwidth=1000;
+    ffzy=ffy.*ZBfilter(f,fcenter,fwidth)';
+    rz=[rz,ffzy/max(ffzy)];
+end;
+plot(f,spec,f,rz);

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+function run_bird {
+
+    bird_name=$1
+    tank_root=$2
+    stim_root=$3
+
+    tank_dir="$tank_root/$bird_name"
+    stim_file="$stim_root/$bird_name/stimProtocol.txt"
+    bmap_file="/auto/fdata/julie/block_mapping_files.csv"
+    output_dir="/tmp/tdt2hdf5/julie/$bird_name"
+    log_file="$output_dir/tdt2hdf5.log"
+
+    rm -fr $output_dir
+    mkdir -p $output_dir
+
+    python convert_tank.py --tank_dir $tank_dir --stim_file $stim_file --block_mapping_file $bmap_file --output_dir $output_dir --check_zscore 0 &> $log_file &
+}
+
+troot="/auto/fdata/julie/Exported_data_tank"
+sroot="/auto/fdata/julie/Stims"
+
+for bname in "BlaBro09xxF" "GreBlu9508M" "LblBlu2028M" "WhiBlu5396M" "WhiWhi4522M" "YelBlu6903F"
+do
+    run_bird $bname $troot $sroot
+done

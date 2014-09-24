@@ -1,0 +1,13 @@
+function nsong=SmoothSong(song);
+nl=length(song.splits);
+nsong=song;
+nsong.smooth={};
+for i=1:nl;
+    moto=song.r_moto{i}.b;
+    spec=song.splits{i};
+    [new_moto,new_nw,new_sp]=SmoothMoto(moto,spec);
+    nsong.smooth{i}={};
+    nsong.smooth{i}.moto=new_moto;
+    nsong.smooth{i}.nw=new_nw;
+    nsong.smooth{i}.sp=new_sp;
+end;

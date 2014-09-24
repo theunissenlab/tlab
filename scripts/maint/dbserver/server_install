@@ -1,0 +1,42 @@
+#! /bin/sh
+
+# Install Apache2, PHP5, MySQL5 and PHPMyAdmin
+aptitude install -y apache2
+aptitude install -y php5
+aptitude install -y mysql-server
+aptitude install -y mysql-client
+aptitude install -y phpmyadmin
+
+# Copy mysql config file
+cp -f my.cnf /etc/mysql
+
+# Modify apparmor profile
+sed -i.original -fconfig_apparmor /etc/apparmor.d/usr.sbin.mysqld
+
+# Copy base tables to /data/mysql
+cp -R /var/lib/mysql/mysql /data/mysql
+
+# Force permissions just to be safe
+chown -R mysql:mysql /data/mysql
+
+# Restart the server
+restart mysql
+
+# To get the database working, you will need to log in to mysql as root
+# and reset the password for debian-sys-maint@localhost
+# Find the password in /etc/mysql/debian.cnf and write it down
+# Now start mysql-client
+#mysql -uroot -p
+# Update the password
+#SET PASSWORD FOR 'debian-sys-maint'@'localhost' = PASSWORD('$PASSWORD');
+# Currently, this script will work if you saved the old debian-sys-maint password
+python copy_password.py
+/etc/init.d/mysql restart
+
+# Modify apache.conf to get PHPMyAdmin working
+sed -i.original -fconfig_phpmyadmin /etc/phpmyadmin/apache.conf
+cp a2_db_site /etc/apache2/sites-available/database
+a2ensite database
+
+# Restart apache and mysql to get new settings in place
+/etc/init.d/apache2 restart

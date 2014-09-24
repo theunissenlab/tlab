@@ -1,0 +1,12 @@
+
+# This is necessary to get matplotlib to run under mod-wsgi.
+# On startup, it checks the write permissions of its config file;
+# as of 0.98.3, it looks in $HOME for root instead of apache's home.
+# This is most likely a problem with mod-wsgi, which can cause
+# problems when using os module.
+#
+# In practice, Matplotlib does not actually write the configuration
+# file to this location; it merely uses it to check whether it can.
+# It corectly writes in ~www.
+
+export MPLCONFIGDIR=/tmp/

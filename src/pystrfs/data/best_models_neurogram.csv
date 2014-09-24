@@ -1,0 +1,7 @@
+ww1211_5_B,L,neurogram,linear,0.50,0.460832
+yy2728_4_B,L,rawspectrogram,sepnl_spline,1.00,0.434073
+pupu0606_4_B,L,lyons,sepnl_spline,0.75,0.518551
+oo1920_6_B,L,lyons,poisson,1.00,0.475610
+pupu2122_2_B,L,neurogram,sepnl_spline,0.50,0.544719
+oo2015_9_A,L,surprise,leglm,0.00,0.374032
+yy1617_5_B,L,neurogram,sepnl_spline,1.00,0.562628

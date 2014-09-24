@@ -1,0 +1,40 @@
+rootPathDir='$ROOT_DIR'
+
+tlabDir=fullfile(rootPathDir, 'tlab', 'src')
+addpath(fullfile(tlabDir, 'file'))
+
+slurmbotDir=fullfile(tlabDir, 'slurmbot', 'matlab')
+addpath(slurmbotDir)
+
+strflabDir=fullfile(rootPathDir, 'strflab')
+addpath(genpath(strflabDir))
+
+dataDir=fullfile(rootPathDir, 'data')
+stimsDir=fullfile(dataDir, 'all_stims')
+cellDir = fullfile(dataDir, '$CELL_NAME')
+
+tfType = '$TF_TYPE'
+tfParams = struct
+if strcmp('stft', tfType)   
+   tfParams.high_freq = 8000
+   tfParams.low_freq = 375         
+   tfParams.log = 1                
+   tfParams.dbnoise = 80           
+   tfParams.refpow = 0
+elseif strcmp('lyons', tfType)       
+   tfParams.low_freq = 100
+   tfParams.high_freq = 15000
+   tfParams.log = 0
+   tfParams.earQ = $LYONS_EARQ
+   tfParams.agc = $LYONS_AGC
+   tfParams.differ = $LYONS_AGC
+   tfParams.tau = 3
+   tfParams.step = $LYONS_STEP        
+end
+
+
+
+run_strflab_preproc(cellDir, stimsDir, $PREPROC_DESC, tfParams, $STIM_TYPE)
+exit
+
+

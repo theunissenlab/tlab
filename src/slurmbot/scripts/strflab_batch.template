@@ -1,0 +1,8 @@
+rootPathDir='$FDATA_DIR'
+dataDir=fullfile(rootPathDir, 'data')
+tlabDir=fullfile(rootPathDir, 'tlab', 'src')
+addpath(tlabDir)
+strflabDir=fullfile(rootPathDir, 'strflab')
+set_tlab_strflab_paths(tlabDir, strflabDir)
+stimsDir=fullfile(dataDir, 'all_stims')
+batch_strflab_auditory(dataDir, stimsDir, {$DATASET_DIRS})

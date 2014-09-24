@@ -1,0 +1,234 @@
+function sound_out = make_rand_phase(sound_in, samprate)
+% Randomizes the phase in the modulation sepctrum of the sound. 
+% Sound_in is the sound presssure waveform.
+% samprate is the sampling rate
+
+%soundfilename = 'd:/Frederic Theunissen/Data/HandMouthVerb/babble_637ms_n15p86dB.wav'
+%[sound_in, samprate, nbits]= wavread(soundfilename);
+
+% Some parameters: these could become flags
+fband = 125;                                % Frequency band in Hz
+twindow = 1000*6/(fband*2.0*pi);           % Window length in ms - 6 times the standard dev of the gaussian window
+winLength = fix(twindow*samprate/1000.0);  % Window length in number of points
+increment = fix(0.001*samprate);            % Sampling rate of spectrogram in number of points - set at 1 kHz
+debug_fig = 1;                              % Set to 1 to see spectrograms
+f_low=250;                                   % Lower frequency bounds to get average amplitude in spectrogram
+f_high=8000;                               % Upper frequency bound to get average amplitude in spectrogram
+sil_len=500;                               % Amount of silence added at each end of the sound and then subracted
+no_it = 50;                                 % The number of iterations for the spectrum inversion
+tone_ramp=25;                                  % tone ramp in ms 
+logflg = 1;                                 % Perform the mod spectrum in log or linear amplitudes
+keep_temporal_phase = 1;
+
+soundlen = length(sound_in);
+rmssound = std(sound_in);
+fprintf(1,'Length of sound is %f (ms)\n', soundlen*1000.0/samprate);
+
+% find the length of the spectrogram and get a time label in ms
+maxlenused = soundlen+fix(sil_len*2.0*(samprate/1000.0));
+maxlenint = ceil(maxlenused/increment)*increment;
+w = hamming(maxlenint);
+frameCount = floor((maxlenint-winLength)/increment)+1;
+t = 0:frameCount-1;
+t = t + (winLength*1000.0)/(2*samprate);
+
+
+% Pad the sound with silence
+input = zeros(1,maxlenint);
+nzeros = fix((maxlenint - soundlen)/2);
+input(1+nzeros:nzeros+soundlen) = sound_in;
+
+% Get the spectrogram
+input = input .* w';
+[s, fo, pg] = GaussianSpectrum(input, increment, winLength, samprate);  % Gaussian Spectrum called here to get size of s and fo
+fstep = fo(2)-fo(1);
+fl = floor(f_low/fstep)+1;        % low frequency index to get average spectrogram amp
+fh = ceil(f_high/fstep)+1;        % upper frequency index to get average spectrogrma amp
+sabs = abs(s);
+if logflg
+    sabs = log(abs(sabs)+1.0);
+end
+nb = size(sabs,1);
+nt = length(t);
+
+% Display the spectrogram
+if (debug_fig)
+    figure(2);
+    imagesc(t, fo, sabs);
+    axis xy;
+    pause;
+end
+
+% FInd the mean level of the amplitude enveloppe as a function of frequency
+meanf = mean(sabs');
+meant = mean(sabs);
+                      
+% calculate the 2D fft
+fabs = fft2(sabs);
+
+% calculate amplitude and phase 
+amp_fabs = abs(fabs);
+phase_fabs = angle(fabs);
+
+if (debug_fig)  % Display the amplitude and phase spectrum
+    % Find labels for x and y axis
+    % f_step is the separation between frequency bands
+    fstep = fo(2);
+    if ( rem(nb,2) == 0 )
+        for i=1:nb
+            dwf(i)= (i-(nb+2)/2)*(1/(fstep*nb));
+        end
+    else
+        for i=1:nb
+            dwf(i)= (i-(nb+1)/2)*(1/(fstep*nb));
+        end
+    end
+
+    % 1 ms (1000 on the numerator) is the sampling rate
+    if ( rem(nt,2) == 0 )
+        for i=1:nt
+            dwt(i) = (i-(nt+2)/2)*(1000.0/nt);
+        end
+    else
+        for i=1:nt
+            dwt(i) = (i-(nt+1)/2)*(1000.0/nt);
+        end
+    end
+    
+    figure(3);
+    subplot(2,1,1);
+    imagesc(dwt, dwf.*1000, fftshift(amp_fabs));
+    title('Amplitude Spectrum');
+    axis xy;
+    axis([-10 10 0 2]);
+    colorbar;
+    subplot(2,1,2);
+    %imagesc(dwt, dwf.*1000, unwrap(unwrap(fftshift(phase_fabs)),1));
+    imagesc(dwt, dwf.*1000, fftshift(phase_fabs));
+    title('Phase Spectrum');
+    axis xy;
+    axis([-10 10 0 2]);
+    colorbar;
+    pause;
+end
+   
+% Randomize the phase
+newphase_fabs = (rand(size(phase_fabs))-0.5)*2*pi();
+for ib=3:ceil(nb/2)
+    if (ib > 1)
+        for it=2:ceil(nt/2)
+            newphase_fabs(ib, nt-it+2) = -newphase_fabs(nb-ib+2, it);
+        end
+    else
+        for it=2:ceil(nt/2)
+            newphase_fabs(ib, nt-it+2) = -newphase_fabs(ib, it);
+        end
+    end
+end
+newphase_fabs(1,1) = 0.0;
+
+if (keep_temporal_phase)
+    newphase_fabs(1,:) = phase_fabs(1,:);
+    newphase_fabs(2,:) = phase_fabs(2,:);
+    newphase_fabs(nb,:) = phase_fabs(nb,:);
+end
+
+new_fabs = amp_fabs.*exp(complex(0,newphase_fabs)); 
+new_sabs = real(ifft2(new_fabs));
+
+% The amplitude must also stay positive
+meanval = mean(mean(new_sabs));
+if (meanval < 0.0 )    % Flip the amplitude enveloppes in this case
+    new_sabs = -new_sabs;
+end
+
+new_meanf = mean(new_sabs');
+% Fix the amplitude so that the power spectrum matches.
+for ib=1:nb
+    if (logflg)
+        new_sabs(ib,:) = new_sabs(ib,:)+ meanf(ib) - new_meanf(ib);
+    else
+        new_sabs(ib,:) = new_sabs(ib,:).*(meanf(ib)./new_meanf(ib));
+    end
+end
+new_sabs(find(new_sabs< 0.0)) = 0.0;
+
+new_meant = mean(new_sabs);
+new_meanf = mean(new_sabs');
+
+if (debug_fig)
+    figure(4);
+    subplot(2,1,1);
+    plot(meanf,'k');
+    hold on;
+    plot(new_meanf,'r');
+    hold off;
+    title('Mean amplitude vs Frequency');
+    subplot(2,1,2);
+    plot(meant,'k');
+    hold on;
+    plot(new_meant,'r');
+    hold off;
+    title('Mean amplitude vs Time');
+    pause;
+end
+
+% plot the desired new spectrogram
+if (debug_fig)
+    figure(5);
+    imagesc(t, fo, new_sabs);
+    title('Desired Spectrogram');
+    axis xy;
+    pause;
+end
+
+% Invert the spectrogram to get new synthetic sound
+if (logflg)
+    new_sabs = exp(new_sabs)-1;    % First transform back to linear scale
+end
+
+% Give spectrum inversion a random phase to prevent phase artifacts for low
+% no_it
+amp_env_phase = (2*rand(size(new_sabs))-1) + conj(2*rand(size(new_sabs))-1);
+[output, theErr] = SpectrumInversion(new_sabs, increment, winLength, no_it, amp_env_phase);
+
+% plot the actual spectrogram that was obtained in the spectrum inversion
+[s, fo, pg] = GaussianSpectrum(output, increment, winLength, samprate);  % Gaussian Spectrum called here to get size of s and fo
+obtained_sabs = abs(s);
+if (logflg)
+    obtained_sabs = log(obtained_sabs+1.0);
+end
+
+% Display the spectrogram, mod spectrum and phase spectrum
+if (debug_fig)
+    figure(6);
+    imagesc(t, fo, obtained_sabs);
+    title('Obtained Spectrogram');
+    axis xy;
+
+    % calculate the 2D fft
+    ofabs = fft2(obtained_sabs);
+    amp_ofabs = abs(ofabs);
+    phase_ofabs = angle(ofabs);
+    figure(7);
+    subplot(2,1,1);
+    imagesc(dwt, dwf.*1000, fftshift(amp_ofabs));
+    title('Amplitude Spectrum');
+    axis xy;
+    axis([-10 10 0 2]);
+    colorbar;
+    subplot(2,1,2);
+    %imagesc(dwt, dwf.*1000, unwrap(unwrap(fftshift(phase_fabs)),1));
+    imagesc(dwt, dwf.*1000, fftshift(phase_ofabs));
+    title('Phase Spectrum');
+    axis xy;
+    axis([-10 10 0 2]);
+    colorbar;
+
+end
+
+% THe output sound is in the middle and we add a ramp
+sound_out = output(1+nzeros:nzeros+soundlen);
+rms_out = std(sound_out);
+sound_out = (rmssound/rms_out).*sound_out;
+sound_out = addramp(sound_out, samprate, tone_ramp);

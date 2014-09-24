@@ -1,0 +1,146 @@
+#LyX 1.6.5 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Non-parametric GLMs
+\end_layout
+
+\begin_layout Section
+Formulation
+\end_layout
+
+\begin_layout Standard
+The data consists of observations of input 
+\begin_inset Formula $\mathbf{x}\in\mathbb{R}^{M}$
+\end_inset
+
+ and output 
+\begin_inset Formula $y\in\mathcal{Y}$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+\mathcal{D}=\{(\mathbf{x}_{i},y_{i})\}\]
+
+\end_inset
+
+The goal is to predict the mean response 
+\begin_inset Formula $\mu_{i}=E[y_{i}]$
+\end_inset
+
+ from the input through some non-parametric function:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+\mu_{i}=g(\mathbf{\theta}^{T}\mathbf{x}_{i})\]
+
+\end_inset
+
+where 
+\begin_inset Formula $\theta\in\mathbb{R}^{M}$
+\end_inset
+
+ and 
+\begin_inset Formula $g(z)=\sum_{i=1}^{B}b_{i}\phi(z)$
+\end_inset
+
+.
+ In the GLM formulation, the noise distribution on 
+\begin_inset Formula $y$
+\end_inset
+
+ is given as an exponential family:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+P(y_{i}|\theta,x,\tau)=h(y_{i},\tau)exp((\eta_{i}y_{i}-A(\eta_{i}))/\gamma(\tau))\]
+
+\end_inset
+
+where 
+\begin_inset Formula $\eta_{i}$
+\end_inset
+
+ is the canonical parameter, a function of 
+\begin_inset Formula $\mu_{i}$
+\end_inset
+
+, 
+\begin_inset Formula $A(\eta_{i})$
+\end_inset
+
+ is the cumulant function, 
+\begin_inset Formula $h(y_{i},\tau)$
+\end_inset
+
+ is a normalizing function, and 
+\begin_inset Formula $\gamma(\tau)$
+\end_inset
+
+ is the dispersion function.
+ The variance of 
+\begin_inset Formula $y_{i}$
+\end_inset
+
+ is given as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+Var[y_{i}]=\gamma(\tau)Var[\mu_{i}]\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\end_body
+\end_document

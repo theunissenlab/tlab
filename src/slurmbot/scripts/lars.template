@@ -1,0 +1,26 @@
+rootPathDir='$ROOT_DIR'
+
+tlabDir=fullfile(rootPathDir, 'tlab', 'src')
+addpath(fullfile(tlabDir, 'file'))
+
+slurmbotDir=fullfile(tlabDir, 'slurmbot', 'matlab')
+addpath(slurmbotDir)
+
+strflabDir=fullfile(rootPathDir, 'strflab')
+addpath(genpath(strflabDir))
+
+dataDir=fullfile(rootPathDir, 'data')
+stimsDir=fullfile(dataDir, 'all_stims')
+cellDir = fullfile(dataDir, '$CELL_NAME')
+
+maxIters = $MAX_ITERS
+findBest = $FIND_BEST
+
+hyperParams = struct
+hyperParams.lambda2 = $LAMBDA2
+
+nlType = '$NL_TYPE'
+
+run_strflab_lars(cellDir, stimsDir, $STRF_LENGTH, nlType, $TRAINING_GROUPS, $VALIDATION_GROUPS, hyperParams, '$FILE_DESC', maxIters, findBest)
+exit
+

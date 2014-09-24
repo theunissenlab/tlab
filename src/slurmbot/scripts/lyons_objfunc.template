@@ -1,0 +1,12 @@
+rootPathDir='$FDATA_DIR'
+dataDir=fullfile(rootPathDir, 'data')
+tlabDir=fullfile(rootPathDir, 'tlab', 'src')
+addpath(tlabDir)
+strflabDir=fullfile(rootPathDir, 'strflab')
+set_tlab_strflab_paths(tlabDir, strflabDir)
+stimsDir=fullfile(dataDir, 'all_stims')
+params = struct
+params.earQ=$EARQ
+params.stepSize=$EAR_STEP
+lyons_objfunc(dataDir, stimsDir, '$BIRD_NAME', '$CELL_NAME', '$TEMP_DIR', params, '$SCORE_FILE_NAME', 1)
+

@@ -1,0 +1,35 @@
+
+<html>
+<head>
+<title>Regional Summary</title>
+<link href="/auto/k6/mschachter/pystrfs/web/style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	
+	%for reg in regions:
+		<center>
+		<h3>${reg}</h3>
+		<table border="0">
+		<tr>
+		<td>&nbsp;</td>
+		%for mname in modelTypes:
+			<th>${mname}</td>
+		%endfor
+		</tr>
+		%for ptype in preprocTypes:
+		<tr>
+			<th>${ptype}</th>
+			%for mname in modelTypes:
+				<% ms = score_data[reg][ptype][mname] %>
+				<td style="{color:rgb(${ms.rgb[0]},${ms.rgb[1]},${ms.rgb[2]})}">${'%0.2f +/- %0.2f' % (ms.score_mean,ms.score_std)}</td>
+			%endfor
+		</tr>
+		%endfor
+		
+		</table>
+		</center>
+	
+	%endfor
+	
+</body>
+</html>

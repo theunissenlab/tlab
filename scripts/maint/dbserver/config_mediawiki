@@ -1,0 +1,9 @@
+# Edit the following lines:
+s/\(\$wgSitename\).*$/\1 = "TWiki";/
+s/\(\$wgScriptPath\).*$/\1 = "/wiki";/
+s/\(\$wgEmergencyContact\).*$/\1 = "channing_moore@berkeley.edu";/
+s/\(\$wgPasswordSender\).*$/\1 = "channing_moore@berkeley.edu";/
+s/\(\$wgDBserver\).*$/\1 = "database.fet.berkeley.edu";/
+s/\(\$wgDBname\).*$/\1 = "wikidb";/
+s/\(\$wgDBuser\).*$/\1 = "wikiuser";/
+s/\(\$wgDBpassword\).*$/\1 = "ortolan";/

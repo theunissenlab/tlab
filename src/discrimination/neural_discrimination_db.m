@@ -1,0 +1,119 @@
+function neural_discrimination_db(classresp_id)
+%[nfiles, stimrate, stdstimrate, backrate, stdbackrate, avgzscore, stdzscore, avgdprime, stddprime, percorrect, avgrank, info, noiseinfo, rateinfo, info1, info2, info2Interval]
+% Calculates 3 measures of neural discrimination, the within dprime, the
+% percent correct of an ideal oberver based on VR method and the
+% information based on Gamma model of spiking neuron
+% read all the spike arrival times in a folder
+
+mfile_name = which('neural_discrimination_db');
+mfile_dir = fileparts(mfile_name);
+tlab_root = regexp(mfile_dir,'[a-zA-Z/\\]*/tlab/lib/','match');
+tlab_root = tlab_root{1};
+addpath(fullfile(tlab_root,'file'));
+addpath(fullfile(tlab_root,'db'));
+
+% Repository version
+curr_rev = svn_get_version(mfile_name);
+
+% Response sampling rate
+respsamprate_Hz = 1000;
+
+% Initialize database connection
+mysql('open','database.fet.berkeley.edu','cluster_analysis','cluster');
+
+% Read input data from data base
+[nfiles spike_times stim_len] = read_all_spikes_db(classresp_id,respsamprate_Hz);
+
+% Window sizes for calculations that depend on window length
+winSize = [1 3 5 10 30 50 100];    % Window size for static Info calculation and for ideal observer
+% winSize = [50];    % Window size for static Info calculation and for ideal observer
+ns = length(winSize);
+
+if nfiles
+	% Calculate dprime within
+    [stimrate stdstimrate backrate stdbackrate avgzscore stdzscore avgdprime stddprime] = dprime_within(nfiles, spike_times, stim_len);
+ 	sql_str = sprintf(['REPLACE INTO analysis.within_dprimes ',...
+ 						'(classresp_id,stimrate,stdstimrate,',...
+ 						 'backrate,stdbackrate,avgzscore,',...
+ 						 'stdzscore,avgdprime,stddprime,',...,
+ 						 'repository_version,date) ',...
+ 					   'VALUES (%d,%f,%f,%f,%f,%f,%f,%f,%f,%d,CURDATE());'],...
+ 					  classresp_id,stimrate,stdstimrate,...
+ 					  backrate,stdbackrate,avgzscore,stdzscore,...
+ 					  avgdprime,stddprime,curr_rev);
+ 	mysql(sql_str);
+
+    % Calculate the ideal oberserver VR metric.
+    for is=1:ns
+        [pc, mi_conf, zdT, pzdT, pzdT2, mi_zdT, mi_zdT2, zdS, pzdS, mi_zdS] = info_distance(nfiles, spike_times, stim_len, @VR_distance, winSize(is));
+        sql_str = sprintf(['REPLACE INTO analysis.ideal_observer_metrics ',...
+        				   		'(classresp_id,window_size,percorrect,',...
+        			       		 'mi_confusion,zdistT,pzdistT,pzdistT2,',...
+        			       	     'mizdistT,mizdistT2,zdistS,pzdistS,',...
+        			       	     'mizdistS,repository_version,date) ',...
+        			      'VALUES (%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,CURDATE());'],...
+        			       classresp_id,winSize(is),pc,mi_conf,zdT,pzdT,...
+        			       pzdT2,mi_zdT,mi_zdT2,zdS,pzdS,mi_zdS,curr_rev);
+        mysql(sql_str);
+    end
+        
+    % With VR_distanceB
+    for is=1:ns
+        
+        % Reinsert this if using the confusion matrix in version B
+        [pc, mi_conf, zdT, pzdT, mi_zdT, mi_zdT_nc, zdS, pzdS, mi_zdS, mi_zdS_nc] = info_distanceB(nfiles, spike_times, stim_len, @VR_distanceB, winSize(is));
+        sql_str = sprintf(['REPLACE INTO analysis.ideal_observer_template_metrics ',...
+        					'(classresp_id,window_size,percorrectB,',...
+        					 'miconfusionB,zdistTB,pzdistTB,',...
+        					 'mizdistTB,mizdistncTB,zdistSB,pzdistSB,',...
+        					 'mizdistSB,mizdistncSB,repository_version,date) ',...
+        				    'VALUES (%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,CURDATE());'],...
+        				    classresp_id,winSize(is),pc,mi_conf,zdT,pzdT,...
+        				    mi_zdT,mi_zdT_nc,zdS,pzdS,mi_zdS,mi_zdS_nc,...
+                            curr_rev);
+ 		mysql(sql_str);
+    end
+
+
+    % Gamma model information calculation
+    %onset_time = 200;  % the first 200 ms of the response are removed from the data set
+    onset_time = 0;
+    spiketrain = spike_times_to_train(nfiles, spike_times, stim_len, onset_time);
+    [info, noiseentropy, totalentropy, gamma_const, rate_bandwidth, rate_gamma, fano_factor]= gamma_info(spiketrain);
+    
+    gamma_mutual_info = info(1)*respsamprate_Hz;                    % Info rates in bits/second
+    gamma_noise_entropy = noiseentropy(1)*respsamprate_Hz;       % Noiseentropy in bits/second
+    gamma_spike_rate = mean(mean(spiketrain))*respsamprate_Hz;  % Spiking rate is spikes/second
+ 
+    sql_str=sprintf(['REPLACE INTO analysis.gamma_infos ',...
+    				 '(classresp_id,mutual_info,noise_entropy,',...
+                      'spike_rate,const,rate_bandwidth,rate_gamma,',...
+ 			      	  'fano_factor,repository_version,date) ',...
+    				 'VALUES (%d,%f,%f,%f,%f,%f,%f,%f,%d,CURDATE());'],...
+                     classresp_id,gamma_mutual_info,gamma_noise_entropy,...
+                     gamma_spike_rate,gamma_const,rate_bandwidth,...
+                     rate_gamma,fano_factor,curr_rev);
+    mysql(sql_str);
+
+    % Rate Information
+    [rate_info_biased, rate_info_bcorr, rate_info_stderr] = findInfoSR(spiketrain,winSize);
+    
+    for is=1:ns
+        sql_str=sprintf(['REPLACE INTO analysis.rate_infos ',...
+                          '(classresp_id,window_size,info_biased,',...
+                          'info_bcorr,info_stderr1,info_stderr2,',...
+                          'repository_version,date) ',...
+                         'VALUES (%d,%d,%f,%f,%f,%f,%d,CURDATE());'],...
+                        classresp_id,winSize(is),rate_info_biased(is),...
+                        rate_info_bcorr(is),rate_info_stderr(is,1),...
+                        rate_info_stderr(is,2),curr_rev);
+        mysql(sql_str);
+    end
+	
+end
+
+
+
+
+
+

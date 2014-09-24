@@ -1,0 +1,253 @@
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_odeiv.h>
+#include <gsl/gsl_errno.h>
+#include "bga.h"
+
+
+
+int
+ODEfuncNS(double t, const double y[], double f[], void *params)
+{
+
+	double         *pa = (double *) params;
+	double          alpha = pa[0];
+	double          beta = pa[1];
+	double          gamma = pa[2], gamma2 = gamma * gamma;
+	double          yy = y[1], x = y[0];
+
+	f[0] = yy;
+	f[1] = alpha * gamma2 - beta * gamma2 * x - gamma2 * x * x * x - gamma * x * x * yy + gamma2 * x * x - gamma * x * yy;
+	return GSL_SUCCESS;
+}
+
+int
+ODEjacNS(double t, const double y[], double *dfdy, double dfdt[], void *params)
+{
+
+	double         *pa = (double *) params;
+	double          alpha = pa[0];
+	double          beta = pa[1];
+	double          gamma = pa[2], gamma2 = gamma * gamma;
+	double          yy = y[1], x = y[0];
+
+	//double       *p = (double *) params;
+	gsl_matrix_view dfdy_mat = gsl_matrix_view_array(dfdy, 2, 2);
+	gsl_matrix     *m = &dfdy_mat.matrix;
+	/*
+	 * 0              1 -k -2*c*y    -(p-b)-cx^2
+	 */
+	gsl_matrix_set(m, 0, 0, 0.0);
+	gsl_matrix_set(m, 0, 1, 1.0);
+	gsl_matrix_set(m, 1, 0, -beta * gamma2 - 3 * gamma2 * x * x - 2 * gamma * x * yy + 2 * gamma2 * x - gamma * yy);
+	gsl_matrix_set(m, 1, 1, -gamma * x * x - gamma * x);
+	dfdt[0] = 0.0;
+	dfdt[1] = 0.0;
+	return GSL_SUCCESS;
+}
+
+
+void
+ODErunNS(double *data, double tmax, double dt, double *pa)
+{
+
+	const gsl_odeiv_step_type *T = gsl_odeiv_step_rk8pd;
+	gsl_odeiv_step *s = gsl_odeiv_step_alloc(T, 2);
+	gsl_odeiv_control *c = gsl_odeiv_control_y_new(1e-10, 0.0);
+	gsl_odeiv_evolve *e = gsl_odeiv_evolve_alloc(2);
+	gsl_odeiv_system sys = {ODEfuncNS, ODEjacNS, 2, pa};
+	int             totalframe = ceil(tmax / dt);
+	int             i = 0;
+	double          t1 = dt, t = 0.0;
+	double          h = 1e-10;
+	double          y[2] = {pa[3], pa[4]};
+
+
+	while (t1 < tmax) {
+		while (t < t1) {
+			int             status = gsl_odeiv_evolve_apply(e, c, s,
+									&sys,
+								     &t, t1,
+								     &h, y);
+
+			if (status != GSL_SUCCESS)
+				break;
+		}
+		i++;
+		t1 += dt;
+		data[i] = y[0];
+		//printf("%lf %lf\n", t1, y[0]);
+
+	}
+	gsl_odeiv_evolve_free(e);
+	gsl_odeiv_control_free(c);
+	gsl_odeiv_step_free(s);
+
+}
+
+int
+ODEfunc(double t, const double y[], double f[], void *params)
+{
+
+	ODEparams      *pa = (ODEparams *) params;
+	double          alpha = gsl_spline_eval(pa->a_spline, t, pa->a_acc);
+	double          beta = gsl_spline_eval(pa->b_spline, t, pa->b_acc);
+	double          gamma = pa->gamma, gamma2 = gamma * gamma;
+	double          yy = y[1], x = y[0];
+
+	f[0] = yy;
+	f[1] = alpha * gamma2 - beta * gamma2 * x - gamma2 * x * x * x - gamma * x * x * yy + gamma2 * x * x - gamma * x * yy;
+	return GSL_SUCCESS;
+}
+
+int
+ODEjac(double t, const double y[], double *dfdy, double dfdt[], void *params)
+{
+
+	ODEparams      *pa = (ODEparams *) params;
+	double          alpha = gsl_spline_eval(pa->a_spline, t, pa->a_acc);
+	double          beta = gsl_spline_eval(pa->b_spline, t, pa->b_acc);
+	double          gamma = pa->gamma, gamma2 = gamma * gamma;
+	double          yy = y[1], x = y[0];
+
+
+	//double       *p = (double *) params;
+	gsl_matrix_view dfdy_mat = gsl_matrix_view_array(dfdy, 2, 2);
+	gsl_matrix     *m = &dfdy_mat.matrix;
+	/*
+	 * 0              1 -k -2*c*y    -(p-b)-cx^2
+	 */
+	gsl_matrix_set(m, 0, 0, 0.0);
+	gsl_matrix_set(m, 0, 1, 1.0);
+	gsl_matrix_set(m, 1, 0, -beta * gamma2 - 3 * gamma2 * x * x - 2 * gamma * x * yy + 2 * gamma2 * x - gamma * yy);
+	gsl_matrix_set(m, 1, 1, -gamma * x * x - gamma * x);
+	dfdt[0] = 0.0;
+	dfdt[1] = 0.0;
+	return GSL_SUCCESS;
+}
+void ODErun(double * data, double tmax, double dt,ODEparams * pa)
+{
+
+	const gsl_odeiv_step_type * T = gsl_odeiv_step_rk8pd;
+  	gsl_odeiv_step * s = gsl_odeiv_step_alloc (T, 2);
+  	gsl_odeiv_control * c = gsl_odeiv_control_y_new (1e-10, 0.0);
+  	gsl_odeiv_evolve * e  = gsl_odeiv_evolve_alloc (2);
+  	gsl_odeiv_system sys = {ODEfunc, ODEjac, 2, pa};
+  	int totalframe=ceil(tmax/dt);
+  	int i=0;
+	double t1=dt,t=0.0;  		
+	double h = 1e-10;
+	double y[2] = { pa->x0,pa->y0};
+	
+
+	while(t1<tmax)
+    {
+       while (t < t1)
+  	    {  
+	               int status = gsl_odeiv_evolve_apply (e, c, s,
+					       &sys, 
+					       &t, t1,
+					       &h, y);
+	  
+        	  if (status != GSL_SUCCESS)
+	               break;
+      	}	  
+	    i++;	
+      	t1+=dt;
+      	data[i]=y[0];
+/*    	printf("%lf %lf\n",t1,y[0]); */
+
+	}
+	gsl_odeiv_evolve_free (e);
+  	gsl_odeiv_control_free (c);
+	gsl_odeiv_step_free (s);
+
+}
+
+ODEparams      *
+ODEinit(int nap, double *alpha, double *talpha, int nbp, double *beta, double *tbeta, int nfp, double *filter, double *freqs, double gamma, double x0, double y0)
+{
+	ODEparams      *pa = (ODEparams *) malloc(sizeof(ODEparams));
+
+	pa->gamma = gamma;
+	pa->x0 = x0;
+	pa->y0 = y0;
+
+	pa->nap = nap;
+	pa->nbp = nbp;
+	pa->nfp = nfp;
+
+	pa->alpha = calloc(nap, sizeof(double));
+	pa->talpha = calloc(nap, sizeof(double));
+	pa->beta = calloc(nbp, sizeof(double));
+	pa->tbeta = calloc(nbp, sizeof(double));
+	pa->filter = calloc(nfp, sizeof(double));
+	pa->freqs = calloc(nfp, sizeof(double));
+
+	int             i;
+	memcpy(pa->alpha, alpha, nap * sizeof(double));
+	memcpy(pa->talpha, talpha, nap * sizeof(double));
+	memcpy(pa->beta, beta, nbp * sizeof(double));
+	memcpy(pa->tbeta, tbeta, nbp * sizeof(double));
+	memcpy(pa->filter, filter, nfp * sizeof(double));
+	memcpy(pa->freqs, freqs, nfp * sizeof(double));
+	pa->a_acc = gsl_interp_accel_alloc();
+	pa->b_acc = gsl_interp_accel_alloc();
+	pa->f_acc = gsl_interp_accel_alloc();
+	pa->a_spline = gsl_spline_alloc(gsl_interp_cspline, nap);
+	gsl_spline_init(pa->a_spline, pa->talpha, pa->alpha, pa->nap);
+	pa->b_spline = gsl_spline_alloc(gsl_interp_cspline, nbp);
+	gsl_spline_init(pa->b_spline, pa->tbeta, pa->beta, pa->nbp);
+	pa->f_spline = gsl_spline_alloc(gsl_interp_cspline, nfp);
+	gsl_spline_init(pa->f_spline, pa->freqs, pa->filter, pa->nfp);
+
+	pa->gamma = gamma;
+	pa->x0 = x0;
+	pa->y0 = y0;
+	return pa;
+}
+
+
+void
+ODEupdate(ODEparams * pa, double *alpha, double *beta, double *filter)
+{
+
+	memcpy(pa->alpha, alpha, pa->nap * sizeof(double));
+	memcpy(pa->beta, beta, pa->nbp * sizeof(double));
+	memcpy(pa->filter, filter, pa->nfp * sizeof(double));
+	gsl_spline_init(pa->a_spline, pa->talpha, pa->alpha, pa->nap);
+	gsl_spline_init(pa->b_spline, pa->tbeta, pa->beta, pa->nbp);
+	gsl_spline_init(pa->f_spline, pa->freqs, pa->filter, pa->nfp);
+
+}
+void smBGAs(double * data, int size,double gamma, double alpha, double beta)
+{
+//	gsl_error_handler_t * err=gsl_set_error_handler_off ();
+
+	double samplerate=44100.;
+	double dt=1/(samplerate);
+	double tmax=size/samplerate;
+	double pa[]={alpha,beta,gamma,0,1};
+	ODErunNS(data,tmax,dt,pa);
+	
+}
+
+void smBGAsl(double * data, int size,double gamma, double * alpha, double * talpha, int nap,double * beta, double *tbeta, int nbp,double * filter, double * freqs, int nfp)
+{
+
+	gsl_error_handler_t * err=gsl_set_error_handler_off ();
+
+	double samplerate=44100.;
+	double dt=1/(samplerate);
+	double tmax=size/samplerate;
+
+	ODEparams * pa=ODEinit(nap,alpha,talpha,nbp,beta,tbeta,nfp,filter,freqs,gamma,0, 1);
+
+
+	ODErun(data,tmax,dt,pa);
+	
+}

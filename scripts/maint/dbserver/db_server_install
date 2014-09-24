@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# Install Apache2, PHP5, MySQL5 and PHPMyAdmin
+aptitude -y install apache2 php5 mysql-server mysql-client phpmyadmin
+
+# Install Python, SciPy, Pylons, SQLAlchemy, and MySQL driver
+aptitude -y install python python-scientific python-mysqldb python-sqlalchemy python-pylons
+
+# Modify my.cnf to remove localhost-only binding for MySQL
+# This is done by commenting out the line "bind-address=127.0.0.1"
+#sed -i.original -fconfig_mysql /etc/mysql/my.cnf
+
+# Upload database data from backup
+#mysql -hlocalhost -uroot </auto/fdata/channing/DB/backup2009-01-07.sql
+
+# To get the database working, you will need to log in to mysql as root
+# and reset the password for debian-sys-maint@localhost
+# Find the password in /etc/mysql/debian.cnf and write it down
+# Now start mysql-client
+#mysql -uroot -p
+# Update the password
+#SET PASSWORD FOR 'debian-sys-maint'@'localhost' = PASSWORD('$PASSWORD');
+#/etc/init.d/mysql restart
+
+# Modify apache.conf to get PHPMyAdmin working
+# Add "Include /etc/phpmyadmin/apache.conf" at the end of the file
+#sed -i.original -fconfig_a2 /etc/apache2/apache2.conf

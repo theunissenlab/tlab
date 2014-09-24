@@ -1,0 +1,566 @@
+#LyX 1.6.5 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\language english
+\inputencoding auto
+\font_roman times
+\font_sans default
+\font_typewriter default
+\font_default_family rmdefault
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Report: Fitting Sigmoidal Output Nonlinearities to STRF Models
+\end_layout
+
+\begin_layout Author
+Mike Schachter
+\end_layout
+
+\begin_layout Date
+December 17, 2010
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+We have stimuli and response data from ~600 neurons in MLd (midbrain), OV
+ (thalamus), and higher regions (field L, CM), and wish to find optimal
+ models for their stimulus-response functions.
+ Let 
+\begin_inset Formula $\mathbf{s}_{t}\in\mathbb{R}^{M}$
+\end_inset
+
+ be the stimulus vector at time 
+\begin_inset Formula $t$
+\end_inset
+
+, which includes it's spacial and temporal components, and 
+\begin_inset Formula $r(t)$
+\end_inset
+
+ be the value of the PSTH at time 
+\begin_inset Formula $t$
+\end_inset
+
+.
+ We fit STRFs to the stimulus response function, which are linear mappings
+ between the stimulus and response space:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+\hat{r}(t)=\mathbf{a}^{T}\mathbf{s}_{t}+a_{0}\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The STRF is given by 
+\begin_inset Formula $\mathbf{a}\in\mathbb{R}^{M}$
+\end_inset
+
+, and 
+\begin_inset Formula $a_{0}$
+\end_inset
+
+ is the bias weight.
+ Neurons are not linear, so we make the model more complex by adding a static
+ output nonlinearity.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+\hat{r}(t)=f(\mathbf{a}^{T}\mathbf{s}_{t}+a_{0})\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Here we empirically identify plausible output nonlinearities and use parametric
+ fits and staggard optimization to improve the prediction performance of
+ our models.
+\end_layout
+
+\begin_layout Section
+Methods
+\end_layout
+
+\begin_layout Subsection
+Regions, Stimulus Classes, and Stimulus Preprocessing
+\end_layout
+
+\begin_layout Standard
+30 cells were tested in this report, 10 from each region (MLd, OV, L).
+ For each cell we tested responses to several stimulus classes.
+ First was conspecific birdsong, natural sounds which evoke robust responses
+ in each area.
+ The next was syn-song, which is Gaussian noise filtered to have similar
+ statistics to birdsong.
+ The third was ml-noise, the sound equivalent of pure Gaussian noise.
+ We also compared two stimulus representation methods - the spectrogram
+ and Lyon's cochlear model.
+\end_layout
+
+\begin_layout Subsection
+Probabilistic Relation Between Linear Output and PSTH
+\end_layout
+
+\begin_layout Standard
+Stimuli are random variables drawn from some unknown distribution, implying
+ that the linear output 
+\begin_inset Formula $x=\mathbf{a}^{T}\mathbf{s}_{t}+a_{0}$
+\end_inset
+
+ is a random variable.
+ We can associate 
+\begin_inset Formula $x$
+\end_inset
+
+ with a probability density function 
+\begin_inset Formula $P(X=x)$
+\end_inset
+
+, and values of the PSTH with a probability density function 
+\begin_inset Formula $P(Y=y)$
+\end_inset
+
+.
+ The output nonlinearity can be related to the conditional density 
+\begin_inset Formula $P(Y|X=x)$
+\end_inset
+
+ by:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+f(x)=E[P(Y|X=x)]\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+To produce this distribution, values of the linear output are binned, then
+ the distribution 
+\begin_inset Formula $Y|X$
+\end_inset
+
+ is constructed from the binned data and visualized to provide intuition
+ as to the shape of the output nonlinearity.
+\end_layout
+
+\begin_layout Subsection
+Sigmoidal Output Nonlinearity: Gompertz Curve
+\end_layout
+
+\begin_layout Standard
+In the results section it's explained that we're guided by the form of 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+
+\begin_inset Formula $E[P(Y|X=x)]$
+\end_inset
+
+
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\noun default
+\color inherit
+ to use a parameterized sigmoidal output nonlinearity.
+ An often-used parameterized sigmoid is given by the Gompertz function:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+f(x;a,b,c)=ae^{be^{cx}}\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The parameter 
+\begin_inset Formula $a$
+\end_inset
+
+ sets the saturation value of the sigmoid, which we fix at 
+\begin_inset Formula $a=1$
+\end_inset
+
+.
+ The parameter 
+\begin_inset Formula $b<0$
+\end_inset
+
+ sets the offset of the sigmoid along the x-axis, the more negative, the
+ further to the right the sigmoid is offset.
+ 
+\begin_inset Formula $c<0$
+\end_inset
+
+ sets the slope of the sigmoid, the more negative it becomes, the steeper
+ the slope.
+\end_layout
+
+\begin_layout Subsection
+Fitting Model Parameters with Staggard Optimization
+\end_layout
+
+\begin_layout Standard
+The STRF and output nonlinearity each have paramters which need to be automatica
+lly fit using an optimization algorihtm.
+ The error function used is sum-of-squares:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula \[
+E(\mathbf{a},a,b,c)=\sum_{t=1}^{N}(r(t)-(\mathbf{a}^{T}\mathbf{s}_{t}+a_{0}))^{2}\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The addition of nonlinear parameters makes the error surface non-convex
+ and prone to local minima.
+ We avoid minimizing the entire errror function directly, and instead use
+ a staggard approach:
+\end_layout
+
+\begin_layout Enumerate
+Find the STRF by minimizing the error function with respect to 
+\begin_inset Formula $\mathbf{a}$
+\end_inset
+
+ using a fast linear optimization technique.
+\end_layout
+
+\begin_layout Enumerate
+Use the STRF to project the stimulus into a set of scalar values, represented
+ by the time series 
+\begin_inset Formula $x(t)$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+Use constrained nonlinear optimization to fit the parameters 
+\begin_inset Formula $\{a,b,c\}$
+\end_inset
+
+, by minimizing the sum-of-squares difference between 
+\begin_inset Formula $f(x(t))$
+\end_inset
+
+ and 
+\begin_inset Formula $r(t)$
+\end_inset
+
+:
+\begin_inset Formula \[
+E_{NL}(a,b,c)=\sum_{t=1}^{N}(f(x(t))-r(t))^{2}\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Find a new STRF by minimizing sum-of-squares between the inverted PSTH and
+ linear model:
+\begin_inset Formula \[
+\mathbf{a}=min_{\mathbf{a}}E_{L}(\mathbf{a})=\sum_{t=1}^{N}(f^{-1}(r(t))-(\mathbf{a}^{T}\mathbf{s}_{t}+a_{0}))^{2}\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Repeat steps 2-4 until optimal parameters 
+\begin_inset Formula $\{\mathbf{a},a,b,c\}$
+\end_inset
+
+ have been found.
+ Here we set the algorithm to stop after 10 iterations, and then choose
+ the best iteration based on the amount of normal mutual information captured
+ by validation data.
+\end_layout
+
+\begin_layout Section
+Results
+\end_layout
+
+\begin_layout Subsection
+Sigmoidal Relationship Between Linear Output and PSTH
+\end_layout
+
+\begin_layout Standard
+For each (cell, stimulus class, preprocessing) combination, we visualized
+ the relationship between linear output and PSTH, given by the functoin
+ 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+
+\begin_inset Formula $g(x)=E[P(Y|X=x)]$
+\end_inset
+
+.
+ The shape of 
+\begin_inset Formula $g(x)$
+\end_inset
+
+ was always of the generalized sigmoid type.
+ Because the mapping was to a PSTH, the range of 
+\begin_inset Formula $g(x)$
+\end_inset
+
+ was always non-negative, and never above 1.
+ Each 
+\begin_inset Formula $g(x)$
+\end_inset
+
+ appeared to be well-fit by a Gompertz curve.
+ See figure 1 for two example cells, with spectrograms and the Lyon's model.
+\end_layout
+
+\begin_layout Subsection
+Sigmoidal Output Nonlinearity Improves Performance for Spectrogram Preprocessing
+\end_layout
+
+\begin_layout Standard
+The sigmoidal relationship between the linear output and PSTH suggests that
+ a sigmoid as a good candidate for the output nonlinearity.
+ As described in the Methods section, we used a staggard optimization procedure
+ to determine the parameters for the Gompertz curve that captured the most
+ information between the predicted response and PSTH.
+ Adding a sigmoidal output nonlinearity improved predictions for almost
+ all cells tested, verified using one-sample t-tests on the difference in
+ performance between linear and linear-nonlinear models.
+ Many of the models performed best on the first iteration of the staggard
+ procedure, leaving the linear STRF unchanged.
+\end_layout
+
+\begin_layout Subsubsection
+Region Specific Effects
+\end_layout
+
+\begin_layout Standard
+MLd and Field L had the greatest performance increases, on the order of
+ 10% for training data, and 2-5% for untouched validation data.
+ See figures 2-4 for summary data for each region.
+ MLd and Field L also had steeper gains than OV, evidenced by more negative
+ values for the slope parameter 
+\begin_inset Formula $c$
+\end_inset
+
+, averaged across cells.
+ Althogh performance gains were higher for training data than validation
+ data, it's possible that regularization techniques for both the linear
+ and nonlinear parts of the optimization could improve validation data performan
+ce.
+\end_layout
+
+\begin_layout Subsubsection
+Performance Gains are a Result of Noise Reduction
+\end_layout
+
+\begin_layout Standard
+The saturating part of the output nonlinearity was rarely reached by the
+ range of scalar outputs.
+ To put it another way, the output nonlinearities, when plotted only in
+ the range of possible linear outputs, looked like exponential functions,
+ not sigmoids.
+ This implies the saturating part of the output nonlinearity did not play
+ a role in improving performance.
+ See figure 5 for some examples of output nonlinearities fit within the
+ range of linear outputs.
+\end_layout
+
+\begin_layout Standard
+Figure 6 illustrates a stereotypical result for the linear-nonlinear models
+ tested.
+ The linear output produces significant noise (spurious low-value predictions)
+ below 0.25.
+ The model fit with a sigmoidal output nonlinearity has less low-amplitude
+ noise, because of the 
+\begin_inset Quotes eld
+\end_inset
+
+squashing
+\begin_inset Quotes erd
+\end_inset
+
+ effect of the sigmoid when it's value is close to 0.
+ One way to observe this is to subtract the LNL response from the linear
+ response.
+ The mean of this difference was always below 0.25, implying that the main
+ difference in predictions between linear and linear-nonlinear models was
+ a reduction in low-amplitude noise.
+ In the SfN poster presented by Schachter et.
+ al (2010), a static threshold output nonlinearity improved predictions
+ for this same reason.
+\end_layout
+
+\begin_layout Subsection
+Sigmoidal Output Nonlinearities Do Not Improve Lyon's Preprocessing Performance
+\end_layout
+
+\begin_layout Standard
+When the same comparison was made using Lyon's cochlear model preprocessing,
+ there was no statistically significant improvement in model performance.
+ In fact, some regions had a slight decrease in training or validation performan
+ce.
+ Because the Lyon's model integrates lateral inhibition and temporal gain
+ control in an effort to remove redundancy and noise, we speculate that
+ the noise-reducing properties of a sigmoidal output nonlinearity are not
+ necessary in this case.
+\end_layout
+
+\begin_layout Subsection
+Lyon's Preprocessing Outperforms LNL Model on Training Data, not Validation
+\end_layout
+
+\begin_layout Standard
+Gill et.
+ al 2006 has already shown that Lyon's model can outperform spectrograms
+ for linear models.
+ We followed up on this result to see if linear-nonlinear models with spectrogra
+ms do better against linear models with Lyon's preprocessing.
+ The results are shown in figure 7.
+ Linear models with Lyon's preprocessing outperform linear-nonlinear models
+ with spectrograms on training data by an average of 5%.
+ The result is statistically significant and holds up to a t-test.
+ However, there is no statistically significant difference in predictions
+ between Lyon's preprocessing with linear models and linear-nonlinear models
+ with spectrograms for validation data, at least for the 30 cells tested.
+\end_layout
+
+\begin_layout Section
+Next Steps
+\end_layout
+
+\begin_layout Subsection
+Lyon's Model and Recurrent Neural Networks
+\end_layout
+
+\begin_layout Standard
+The Lyon's cochlear model is intriguing becaues it produces good linear
+ fits without any output nonlinearity, and because it outperforms spectrograms
+ on training data.
+ Perhaps with the proper regularization, prediction performance can be improved
+ further and potential output nonlinearities can be explored in more detail.
+ Lyon's model is implemented as a recurrent nonlinear filter which closely
+ resembles a one-layer recurrent neural network.
+ It has both temporal gain control and lateral inhibitory gain control.
+ We have yet to tease apart the contributions of these types of gain control
+ to performance increases in prediction, but are moving towards doing so
+ now.
+ It may be advantageous to exploit results found in recurrent neural network
+ literature to come up with simplified models of these types of gain control.
+\end_layout
+
+\begin_layout Subsection
+Sigmoidal Output Nonlinearties and Recurrent Neural Networks
+\end_layout
+
+\begin_layout Standard
+A neural network that has FIR filters input on the input layer is called
+ a 
+\begin_inset Quotes eld
+\end_inset
+
+time-delay
+\begin_inset Quotes erd
+\end_inset
+
+ network (keeping in mind STRFs are FIR filters).
+ Time-delay neural networks have been used since the 90's to reduce the
+ number of parameters to fit.
+ It is very tempting to envision our linear-nonlinear models as single units
+ in a large neural network and treat them as such.
+\end_layout
+
+\begin_layout Standard
+In order to exploit this relationship, the next step could be to fit linear-nonl
+inear models to all MLd cells, and use their output as a preprocessing stage
+ for an OV cell's STRF.
+ The weights can be trained using the usual STRF-fitting routines, or if
+ all weights are to be adjusted a backpropagation algorithm could potentially
+ be used.
+ 
+\end_layout
+
+\begin_layout Standard
+Cells in OV receive feedback from cortical cells in Field L, forming a recurrent
+ neural network.
+ Once an optimal basis for MLd cells is created for fitting STRFs in OV,
+ perhaps it would be advantageous to extend this approach and apply recurrent
+ neural network training algorithms to weightings between Field L cell spike
+ data and OV cell spike data to improve the prediction of OV cell output,
+ and eludicate the function of cortical feedback on thalamic cells.
+\end_layout
+
+\end_body
+\end_document

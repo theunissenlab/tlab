@@ -1,0 +1,3 @@
+# Changes apparmor's definition to allow /data/mysql instead of /var/lib/mysql
+
+s/\/var\/lib\/mysql\//\/data\/mysql\//

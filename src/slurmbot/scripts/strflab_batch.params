@@ -1,0 +1,9 @@
+DATASET_DIRS='yy1617_4_A','gg0116_1_A','oo0909_2_A','pupu1203_4_A','pipi1112_1_A','blublu0916_5_A','pipi1112_2_A','gg0116_5_A'
+FILE_DESC=mld_top25_a
+--------
+DATASET_DIRS='lghp1616_9_A','publu0717_2_A','pupu0333_1_A','pupu1203_1_A','publu0717_11_A','blublu4142_1_A','oo0108_2_A','pupu1203_3_A'
+FILE_DESC=mld_top25_b
+-------
+DATASET_DIRS='blabla0713_5_A','blublu0809_5_A','oo1712_3_A','oo1712_2_A','blabla1904_5_A','blublu0916_3_A','pupu0606_3_A','blabla1904_1_A'
+FILE_DESC=mld_top25_c
+

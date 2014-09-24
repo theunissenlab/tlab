@@ -1,0 +1,33 @@
+table, th, td
+{
+   border:1px solid black;
+   padding: 3px;
+   border-collapse:collapse;
+}
+
+th.left
+{
+   text-align:right;
+}
+
+th.top
+{
+   text-align:center;
+}
+
+
+td
+{
+   text-align:center;
+}
+
+.leftColumn
+{
+   float:left;
+   padding-right: 20px;
+}
+
+.rightColumn
+{
+
+}

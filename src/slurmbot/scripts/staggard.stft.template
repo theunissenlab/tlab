@@ -1,0 +1,27 @@
+rootPathDir='$ROOT_DIR'
+
+tlabDir=fullfile(rootPathDir, 'tlab', 'src')
+addpath(fullfile(tlabDir, 'file'))
+addpath(fullfile(tlabDir, 'surprise'))
+
+slurmbotDir=fullfile(tlabDir, 'slurmbot', 'matlab')
+addpath(slurmbotDir)
+
+strflabDir=fullfile(rootPathDir, 'strflab')
+addpath(genpath(strflabDir))
+
+dataDir=fullfile(rootPathDir, 'data')
+stimsDir=fullfile(dataDir, 'all_stims')
+cellDir = fullfile(dataDir, '$CELL_NAME')
+
+tfParams = struct
+tfParams.high_freq = 8000
+tfParams.low_freq = 375         
+tfParams.log = 1                
+tfParams.dbnoise = 80           
+tfParams.refpow = 0
+tfParams.surprise = $SURPRISE
+
+run_staggard_nl_fit(cellDir, stimsDir, $STRF_LENGTH, $TRAINING_GROUPS, $VALIDATION_GROUPS, 'stft', tfParams, '$PREPROC_DESC', '$STIM_TYPE', '$OUTPUT_FILE_NAME')
+exit
+

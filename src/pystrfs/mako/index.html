@@ -1,0 +1,22 @@
+
+<%def name="unit_link(u)"><a href="units/${u.recsite.old_id}.html">${u.recsite.old_id}</a></%def>
+
+<html>
+<head>
+<title>CRCNS Models</title>
+</head>
+<body>
+	
+	%for reg in ['mld', 'ov', 'l', 'cm']:
+	<div class="cells_by_region">
+	<ol>
+		<h3>${reg}</h3>
+		%for u in region_list[reg]:
+			<li><a href="units/${u.recsite.old_id}/index.html">${u.recsite.old_id}</a></li>
+		%endfor	
+	</ol>
+	</div>
+	%endfor
+	
+</body>
+</html>

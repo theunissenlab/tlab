@@ -1,0 +1,26 @@
+rootPathDir='$ROOT_DIR'
+
+tlabDir=fullfile(rootPathDir, 'tlab', 'src')
+addpath(fullfile(tlabDir, 'file'))
+
+slurmbotDir=fullfile(tlabDir, 'slurmbot', 'matlab')
+addpath(slurmbotDir)
+
+strflabDir=fullfile(rootPathDir, 'strflab')
+addpath(genpath(strflabDir))
+
+dataDir=fullfile(rootPathDir, 'data')
+stimsDir=fullfile(dataDir, 'all_stims')
+cellDir = fullfile(dataDir, '$CELL_NAME')
+
+tfParams = struct
+tfParams.high_freq = 8000
+tfParams.low_freq = 375         
+tfParams.log = 1                
+tfParams.dbnoise = 80           
+tfParams.refpow = 0
+
+run_strflab_preproc(cellDir, stimsDir, 'stft', '$PREPROC_DESC', tfParams, '$STIM_TYPE')
+exit
+
+

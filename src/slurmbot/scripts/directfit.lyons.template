@@ -1,0 +1,30 @@
+rootPathDir='$ROOT_DIR'
+
+tlabDir=fullfile(rootPathDir, 'tlab', 'src')
+addpath(fullfile(tlabDir, 'file'))
+
+atDir=fullfile(rootPathDir, 'tlab', 'AuditoryToolbox')
+addpath(atDir)
+
+slurmbotDir=fullfile(tlabDir, 'slurmbot', 'matlab')
+addpath(slurmbotDir)
+
+strflabDir=fullfile(rootPathDir, 'strflab')
+addpath(genpath(strflabDir))
+
+dataDir=fullfile(rootPathDir, 'data')
+stimsDir=fullfile(dataDir, 'all_stims')
+cellDir = fullfile(dataDir, '$CELL_NAME')
+
+tfParams.low_freq = 100
+tfParams.high_freq = 15000
+tfParams.log = 0
+tfParams.earQ = $LYONS_EARQ
+tfParams.agc = $LYONS_AGC
+tfParams.differ = $LYONS_AGC
+tfParams.tau = 3
+tfParams.step = $LYONS_STEP        
+
+run_strflab_directfit(cellDir, stimsDir, $STRF_LENGTH, $TRAINING_GROUPS, $VALIDATION_GROUPS, 'lyons', tfParams, '$PREPROC_DESC', '$STIM_TYPE', '$OUTPUT_FILE_NAME')
+exit
+

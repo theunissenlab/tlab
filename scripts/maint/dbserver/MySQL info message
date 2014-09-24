@@ -1,0 +1,12 @@
+   │                                                                                          │
+   │ Important note for NIS/YP users                                                          │
+   │                                                                                          │
+   │ To use MySQL, the following entries for users and groups should be added to the system:  │
+   │                                                                                          │
+   │  /etc/passwd   : mysql:x:100:101:MySQL Server:/var/lib/mysql:/bin/false                  │
+   │  /etc/group    : mysql:x:101:                                                            │
+   │                                                                                          │
+   │                                                                                          │
+   │ You should also check the permissions and the owner of the /var/lib/mysql directory:     │
+   │                                                                                          │
+   │  /var/lib/mysql: drwxr-xr-x   mysql    mysql        

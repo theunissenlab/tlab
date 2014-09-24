@@ -1,0 +1,34 @@
+% Make stim_spect from the original enveloppes to calculate auto_correlation
+
+load flatrip_limited.mat;
+
+
+f_width = 125;      % Width of the gaussian filters (std) for the spectrographic representation in Hz.  
+stim_dur=2;         % stimulus duration in s 
+samp_rate=32000;    % sampling rate for sound pressure waveform 
+amp_samp_rate=1000; % sampling rate for spectrogram
+f_low=250;          % Lower bound of filter for sound  
+f_high=8000;        % Upper bound of filter for sound
+
+winLength = (1/f_width)*6*samp_rate;    % The window is given by 6 times the std of the gaussian and it is in units of points
+fftLen = 2^(nextpow2(winLength)+1);     % This is the fftLen that will be calculated in ComplexSpectrum
+f_step = samp_rate/fftLen;
+f_val = 0.0:f_step:samp_rate/2;
+nbands = fftLen/2 + 1;   
+
+% Finds the boundaries in the spectrogram with non-zero entries
+for ind_low=1:nbands
+    if (f_val(ind_low) >= f_low)
+        break;
+    end
+end
+for ind_high=1:nbands
+    if (f_val(ind_high) > f_high)
+        break;
+    end
+end
+if (ind_high == nbands & f_val(nbands) <= f_high)
+    ind_high = nbandsl
+else
+    ind_high = ind_high -1;
+end

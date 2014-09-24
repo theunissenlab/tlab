@@ -1,0 +1,53 @@
+
+<html>
+<head>
+<title>${all_data.unit.recsite.old_id} | ${all_data.preproc_type}_${all_data.model_type}_${'%0.2f' % all_data.threshold}</title>
+<link href="/auto/k6/mschachter/pystrfs/web/style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<h3>Summary Data</h3>
+	<p>
+		Preproc: ${all_data.preproc_type}<br />
+		Model: ${all_data.model_type}<br />
+		Threshold: ${'%0.2f' % all_data.threshold}<br />
+		Training Performance: ${'%0.2f +/- %0.3f' % (all_data.training_performance[0], all_data.training_performance[1])}<br />
+		Validation Performance: ${'%0.2f +/- %0.3f' % (all_data.validation_performance[0], all_data.validation_performance[1])}
+	</p>
+	<table border="0">
+	<tr><th>Average STRF</th><th>P-Values</th><th>Average Output NL</th></tr>
+	<tr>
+		<td><a href="${all_data.strf_prefix}.svg"><img src="${all_data.strf_prefix}.png" border="0" /></a></td>
+		<td><a href="${all_data.pvals_prefix}.svg"><img src="${all_data.pvals_prefix}.png" border="0" /></a></td>
+		<td><a href="${all_data.nl_prefix}.svg"><img src="${all_data.nl_prefix}.png" border="0" /></a></td>
+	</tr>	
+	</table>
+	<br />		
+	<table border="0">
+	
+	<tr><th>STRF</th><th>Output NL</th><th>Responses</th></tr>
+	
+	%for k,mdata in enumerate(all_data.models):
+	<tr>
+	<td colspan="3">
+		<hr />
+		CV Run ${'%d' % k}<br />
+		Performance: ${'%0.2f' % mdata.training_perf} (training), ${'%0.2f' % mdata.validation_perf} (validation)
+	</td>
+	</tr>
+	<tr>
+		<td><a href="${mdata.strf_prefix}.svg"><img src="${mdata.strf_prefix}.png" border="0" /></a></td>
+		<td><a href="${mdata.nl_prefix}.svg"><img src="${mdata.nl_prefix}.png" border="0" /></a></td>
+		<td>
+			<table border="0">
+			<tr>
+			%for vg,rprefix in mdata.vplots.iteritems():
+				<td><a href="${rprefix}.svg"><img src="${rprefix}.png" border="0" /></a></td>
+			%endfor
+			</tr>
+			</table>				
+		</td>
+	</tr>	
+	%endfor
+	
+</body>
+</html>

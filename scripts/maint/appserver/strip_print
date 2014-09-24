@@ -1,0 +1,5 @@
+# This script comments out any lines containing the word "print"
+# This is designed to process rogue python files that print,
+# which causes problems with mod-wsgi.
+
+s/^\(.*print "Reading.*$\)/# \1/g

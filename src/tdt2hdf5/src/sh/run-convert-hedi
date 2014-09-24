@@ -1,0 +1,29 @@
+#!/bin/bash
+
+function run_bird {
+
+    bird_name=$1
+    tank_root=$2
+    stim_root=$3
+
+    tank_dir="$tank_root/$bird_name"
+    stim_file="$stim_root/$bird_name/stimProtocol.txt"
+    bmap_file="$tank_root/block_mapping_files.csv"
+
+    output_dir="/tmp/tdt2hdf5/hsoula/$bird_name"
+    log_file="$output_dir/tdt2hdf5.log"
+
+    rm -fr $output_dir
+    mkdir -p $output_dir
+
+    python convert_tank.py --tank_dir $tank_dir --stim_file $stim_file --block_mapping_file $bmap_file --output_dir $output_dir --check_zscore 0 &> $log_file &
+}
+
+troot="/auto/k8/fdata/hsoula/MRFS/Export_tank"
+sroot="/auto/k8/fdata/hsoula/MRFS/Stims"
+
+#for bname in "GreWhi1141m" "GreWhi1444f"
+for bname in "GraGre1027f"
+do
+    run_bird $bname $troot $sroot
+done

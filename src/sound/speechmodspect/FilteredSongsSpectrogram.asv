@@ -1,0 +1,81 @@
+song_name = 'C:\Documents and Settings\Frederic\My Documents\Data\birdsongs\ucsf\zfa_25\zfa_25.6.filt.wav';
+[song_in fs]= wavread(song_name);
+% song_name_out = 'C:\Documents and Settings\Frederic\My Documents\Data\birdsongs\ucsf\zfa_25\zfa_25_FBon_TH.wav';
+song_name_out = 'C:\Documents and Settings\Frederic\My Documents\Data\birdsongs\ucsf\zfa_25\zfa_25_FBon_RAW.wav';
+[song_BB fs]= wavread(song_name_out);
+song_name_out = 'C:\Documents and Settings\Frederic\My Documents\Data\birdsongs\ucsf\zfa_25\zfa_25_NBS_RAW.wav';
+[song_NBS fs]= wavread(song_name_out);
+song_name_out = 'C:\Documents and Settings\Frederic\My Documents\Data\birdsongs\ucsf\zfa_25\zfa_25_SBB_RAW.wav';
+[song_SBB fs]= wavread(song_name_out);
+song_name_out = 'C:\Documents and Settings\Frederic\My Documents\Data\birdsongs\ucsf\zfa_25\zfa_25_WB_RAW.wav';
+[song_WB fs]= wavread(song_name_out);
+
+figure(1);
+subplot(5,1,1);
+[Y, F, T, P] = spectrogram(song_in,512,256,512,fs);
+imagesc(T,F,10*log10(abs(P)));
+axis xy;
+ylabel('Frequency (Hz)');
+axis_auto = axis;
+axis_auto(3) = 250;
+axis_auto(4) = 8000;
+axis(axis_auto);
+caxis
+caxis([-100 -32]);
+title('Original');
+
+subplot(5,1,2);
+[Y, F, T, P] = spectrogram(song_BB,512,256,512,fs);
+imagesc(T,F,10*log10(abs(P)));
+axis xy;
+ylabel('Frequency (Hz)');
+axis_auto = axis;
+axis_auto(3) = 250;
+axis_auto(4) = 8000;
+axis(axis_auto);
+caxis
+caxis([-65 -45]);
+title('BB Filtering');
+
+subplot(5,1,3);
+[Y, F, T, P] = spectrogram(song_SBB,512,256,512,fs);
+imagesc(T,F,10*log10(abs(P)));
+axis xy;
+ylabel('Frequency (Hz)');
+axis_auto = axis;
+axis_auto(3) = 250;
+axis_auto(4) = 8000;
+axis(axis_auto);
+title('SBB Filtering');
+caxis
+caxis([-65 -45]);
+
+subplot(5,1,4);
+[Y, F, T, P] = spectrogram(song_WB,512,256,512,fs);
+imagesc(T,F,10*log10(abs(P)));
+axis xy;
+ylabel('Frequency (Hz)');
+axis_auto = axis;
+axis_auto(3) = 250;
+axis_auto(4) = 8000;
+axis(axis_auto);
+title('WB Filtering');
+caxis
+caxis([-65 -45]);
+
+ph = subplot(5,1,5);
+[Y, F, T, P] = spectrogram(song_NBS,512,256,512,fs);
+ih = imagesc(T,F,10*log10(abs(P)));
+axis xy;
+set(ph,'YTickLabel', ['2'; '4'; 6 8]);
+ylabel('Frequency (kHz)');
+xlabel('Time (s)');
+axis_auto = axis;
+axis_auto(3) = 250;
+axis_auto(4) = 8000;
+axis(axis_auto);
+title('NB-S Filtering');
+caxis
+caxis([-65 -45]);
+
+

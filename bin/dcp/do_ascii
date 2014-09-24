@@ -1,0 +1,44 @@
+if test $# -ne 6
+	then echo "Usage: do_strf respath filename path neuron dir \"trials\""
+	     exit 2
+fi
+respath=$1
+file=$2 #blus-0252
+path=$3 #/data/cfry/BLUS0252/
+neuron=$4 #12
+name=$5
+numbers=$6 #"4 5 6 7 8 9 10 11 12 13 14"
+val=""
+for i in $numbers
+do
+        val=$path$file"."$neuron"."$i
+	if [ -r  $val ]
+		then echo $val "exists"
+	else
+		echo "error: " $val "does not exist, exiting script"
+		exit 2
+	fi
+done 
+val=" "
+for i in $numbers 
+do
+val=$val" "$path$file"."$neuron"."$i
+done
+if [ -d $respath$neuron ]
+	then echo "directory" $respath$neuron "exists"
+	else echo "creating directory" $respath$neuron
+	mkdir $respath$neuron
+fi
+if [ -d $respath$neuron"/"$name ]
+	then echo "directory" $respath$neuron"/"$name "exists"
+	else echo "creating directory" $respath$neuron"/"$name
+	mkdir $respath$neuron"/"$name
+fi
+
+
+cd $respath$neuron"/"$name
+echo "running dcptoascii_batch"
+/auto/k2/share/dcp_util/dcptoascii_batch $val
+
+
+

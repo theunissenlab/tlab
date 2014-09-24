@@ -1,0 +1,10 @@
+function g=HarmSignals(f0,sampleRate);
+dt=1/sampleRate;
+s=2.0;
+st=0:dt:s;
+fmax=8000;
+nf=fmax/f0;
+g=0*st;
+for i=1:(nf+1);
+    g = g + 1*sin(2*pi*st*i*f0);
+end;

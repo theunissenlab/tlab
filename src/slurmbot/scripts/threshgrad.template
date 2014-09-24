@@ -1,0 +1,26 @@
+rootPathDir='$ROOT_DIR'
+
+tlabDir=fullfile(rootPathDir, 'tlab', 'src')
+addpath(fullfile(tlabDir, 'file'))
+
+slurmbotDir=fullfile(tlabDir, 'slurmbot', 'matlab')
+addpath(slurmbotDir)
+
+strflabDir=fullfile(rootPathDir, 'strflab')
+addpath(genpath(strflabDir))
+
+dataDir=fullfile(rootPathDir, 'data')
+stimsDir=fullfile(dataDir, 'all_stims')
+cellDir = fullfile(dataDir, '$CELL_NAME')
+
+hyperParams = struct;
+hyperParams.threshold = $THRESHOLD
+
+nlType = '$NL_TYPE'
+
+maxIters = $MAX_ITERS
+earlyStop = $EARLY_STOP
+
+run_strflab_threshgrad(cellDir, stimsDir, $STRF_LENGTH, nlType, $TRAINING_GROUPS, $VALIDATION_GROUPS, hyperParams, '$FILE_DESC', maxIters, earlyStop)
+exit
+

@@ -1,0 +1,42 @@
+% Tests filtering speech from the modulation spectrum
+
+% Loads in speech
+song_name = 'C:\Documents and Settings\Frederic\My Documents\Data\birdsongs\ucsf\zfa_25\zfa_25.6.filt.wav';
+[song_in fs]= wavread(song_name);
+
+
+soundsc(song_in, fs);
+
+% Making SSI knock in
+% High-pass sound above 20 Hz.
+
+% First low pass filter below 5 Hz filter and 16 cyc/kHz
+sound_lp = modfilter(song_in, fs, 32, 3, 0.002, 5, 0, 0);
+
+% Then high-pass filter to above 0 Hz and 0.25 cyc/kHz
+sound_hp = modfilter(sound_lp, fs, 32, 2, 0.00025, 0, 0, 0);
+
+% Then prevent +1 and -1
+sound_lp_fixed = sound_hp;
+sound_lp_fixed(find(sound_lp<-1)) = -1;
+sound_lp_fixed(find(sound_lp>1)) = 1;
+
+
+soundsc(sound_lp_fixed, fs);
+
+song_name_out = 'C:\Documents and Settings\Frederic\My Documents\Data\birdsongs\ucsf\zfa_25\zfa_25_NBS_RAW.wav';
+wavwrite(sound_lp_fixed, fs, 16, song_name_out);
+
+% Then compress
+m = max(sound_lp_fixed);
+sound_lp_comp = zeros(size(sound_lp_fixed));
+
+
+function y = fsig(x, m)
+% Returns a compress function of x. m is the maximun value
+
+k = 10^3*exp(0.5*m);
+y = 1./(1+k.*exp(x-0.75*m));
+
+
+

@@ -1,0 +1,12 @@
+T-61.2.filt	5	75
+tutor	20	107
+SPUTS	5	75
+SWTS	60	130
+SRTS	2	82
+SGTS	30	95
+SBLATS	5	70
+SBLUTS	65	135
+SOTS	55	125
+rr_tutor.filt	0	75
+pupu_tutor.filt	10	75
+oo_tutor.filt	58	125

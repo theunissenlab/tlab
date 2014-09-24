@@ -1,0 +1,6 @@
+clear
+filterallnotch
+clear
+filterallhighpass
+clear
+allnofilter

@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Update aptitude and install necessary packages
+
+aptitude install -y python-matplotlib
+aptitude install -y python-scipy
+aptitude install -y python-mysqldb
+aptitude install -y python-sqlalchemy
+aptitude install -y python-pylons
+aptitude install -y libapache2-mod-wsgi
+aptitude install -y subversion
+
+# Tweak scipy.io.wavfile so that it doesn't print to sdout
+sed -i -fstrip_print /usr/lib/python2.6/dist-packages/scipy/io/wavfile.py
+
+# Create directory for lab software and check it out from SVN
+mkdir /var/lib/tlab
+svn co svn+ssh://channing@lithium/auto/fhome/svn/tlab/trunk /var/lib/tlab
+chown -R www-data:root /var/lib/tlab
+chmod -R 750 /var/lib/tlab
+
+# Create directory for the browser software and check it out from SVN
+mkdir /var/lib/databrowser
+svn co svn+ssh://channing@lithium/auto/fhome/svn/databrowser/branches/channing_working /var/lib/databrowser
+chown -R www-data:root /var/lib/databrowser
+chmod -R 750 /var/lib/databrowser
+
+# Copy WSGI script to the appropriate directory
+mkdir -p /usr/local/www/wsgi-scripts/
+cp databrowser.wsgi /usr/local/www/wsgi-scripts/
+cp test.wsgi /usr/local/www/wsgi-scripts/
+chown -R www-data:root /usr/local/www
+
+# Modify apache2 environment variables to get Matplotlib to run
+cat config_a2_envvars >> /etc/apache2/envvars
+
+# Make www-data owner of its own home so that Matplotlib can run
+chown -R www-data:root /var/www
+
+# Copy site specification for databrowser and enable it
+cp a2_databrowser_site /etc/apache2/sites-available/databrowser
+a2ensite databrowser

@@ -1,0 +1,52 @@
+if test $# -ne 6
+	then echo "Usage: do_strf respath filename path neuron dir \"trials\""
+	     exit 2
+fi
+respath=$1
+file=$2 #blus-0252
+path=$3 #/data/cfry/BLUS0252/
+neuron=$4 #12
+name=$5
+numbers=$6 #"4 5 6 7 8 9 10 11 12 13 14"
+val=""
+for i in $numbers
+do
+        val=$path$file"."$neuron"."$i
+	if [ -r  $val ]
+		then echo $val "exists"
+	else
+		echo "error: " $val "does not exist, exiting script"
+		exit 2
+	fi
+done 
+val=" "
+for i in $numbers 
+do
+val=$val" "$path$file"."$neuron"."$i
+done
+if [ -d $respath$file ]
+   then echo "directory" $respath$file "exists"
+	else echo "creating directory" $respath$file
+	mkdir $respath$file
+fi
+if [ -d $respath$file"/"$neuron ]
+	then echo "directory" $respath$file"/"$neuron "exists"
+	else echo "creating directory" $respath$file"/"$neuron
+	mkdir $respath$file"/"$neuron
+fi
+if [ -d $respath$file"/"$neuron"/"$name ]
+	then echo "directory" $respath$file"/"$neuron"/"$name "exists"
+	else echo "creating directory" $respath$file"/"$neuron"/"$name
+	mkdir $respath$file"/"$neuron"/"$name
+fi
+
+# third line down put in optional arguments like bandwidth etc for example here is shown -win 300 and -f_width 125  - filter freq limits are not shown here because default are used #
+
+cd $respath$file"/"$neuron"/"$name
+echo "running dcp_stim_init"
+/auto/k2/share/dcp_util/dcp_stim_init -win 300 -f_width 125 $val
+
+echo "all done!"
+echo "dcp_stim_init has been runned"
+
+

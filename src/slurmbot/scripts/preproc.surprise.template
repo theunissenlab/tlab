@@ -1,0 +1,37 @@
+rootPathDir='$ROOT_DIR'
+
+tlabDir=fullfile(rootPathDir, 'tlab', 'src')
+addpath(fullfile(tlabDir, 'file'))
+addpath(fullfile(tlabDir, 'surprise'))
+
+slurmbotDir=fullfile(tlabDir, 'slurmbot', 'matlab')
+addpath(slurmbotDir)
+
+strflabDir=fullfile(rootPathDir, 'strflab')
+addpath(genpath(strflabDir))
+
+dataDir=fullfile(rootPathDir, 'data')
+stimsDir=fullfile(dataDir, 'all_stims')
+cellDir = fullfile(dataDir, '$CELL_NAME')
+
+tfParams = struct
+tfParams.high_freq = 8000
+tfParams.low_freq = 375         
+tfParams.log = 1                
+tfParams.dbnoise = 80           
+tfParams.refpow = 0
+
+preprocData = preproc_stim_response(cellDir, stimsDir, 1, '$STIM_TYPE', 'stft', tfParams, 'stft.default')
+
+surpriseParams = struct;
+surpriseParams.domainFrequencyWidth = 3
+surpriseParams.domainTimeWidth = 3
+surpriseParams.domainGap = 4
+surpriseParams.outputPath = fullfile(cellDir, '$STIM_TYPE', 'preproc')
+surpriseParams.outputDesc = 'stft.default'
+
+[surpriseStimLouder, surpriseStimQuieter, groupIndex, stimInfo, params] = preprocSoundSurprise(preprocData.stim, preprocData.groupIndex, surpriseParams)
+
+exit
+
+

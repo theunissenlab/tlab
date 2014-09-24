@@ -1,0 +1,29 @@
+CC=gcc
+CFLAGS= -fPIC
+FILES = src/bga.o src/fit.o src/spectrum.o src/optim.o src/utils.o
+INCLUDE=-I/usr/include/python2.7
+LIBS= -lbga -lgsl -lcblas -lsndfile
+LIBS_DIR=-L./
+
+all: libbga.a find_fund.out pyBGA.so
+
+find_fund.out: find_fund.c libbga.a
+	$(CC) -o find_fund.out find_fund.c $(LIBS)  $(LIBS_DIR)
+
+pyBGA.c: pyBGA.pyx
+	cython pyBGA.pyx
+
+pyBGA.o: pyBGA.c
+	$(CC) $(CFLAGS) $(INCLUDE) -c -o pyBGA.o pyBGA.c 
+
+pyBGA.so: pyBGA.o libbga.a	
+	gcc -shared pyBGA.o -o pyBGA.so $(LIBS)  $(LIBS_DIR)
+
+$(filter %.o,$(FILES)): %.o: %.c %.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+libbga.a: $(FILES)
+	ar rus libbga.a $(FILES)
+
+clean:
+	rm *.o 

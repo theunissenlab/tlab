@@ -1,0 +1,59 @@
+
+
+<html>
+<head>
+<title>Unit: ${unit.recsite.old_id}</title>
+<link href="/auto/k6/mschachter/pystrfs/web/style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	
+	<div class="leftColumn">
+	%for ptype in preproc_types:
+		<h3><a href="models_by_preproc_${ptype}.html">${ptype}</a></h3>
+		<table class="score_table">
+			<tr><th>&nbsp;</th>
+	        %for tval in thresholds:
+	            <th class="top">${'%0.2f' % tval}</th>
+	        %endfor
+	        <th>Mean</th>
+	        </tr>
+	        
+	        %for mtype in model_types:            
+            <tr><th class="left">${mtype}</th>
+	            %for tval in thresholds:
+	            	<% ms = score_data[ptype][mtype][tval] %>
+	            	<td>
+	            		<a style="{color:rgb(${ms.rgb[0]},${ms.rgb[1]},${ms.rgb[2]})}" href="${ms.url}">${'%0.2f +/- %0.2f' % (ms.score, ms.score_std)}</a>
+	            	</td>
+				%endfor
+				<td>${'%0.2f' % perf_marginals_thresh[ptype][mtype]}</td>
+	        </tr>	        
+	       	%endfor
+	       	<tr>
+	       	<td>&nbsp;</td>
+	       	%for thresh in thresholds:
+	       		<td>${'%0.2f' % perf_marginals_model[ptype][thresh]}</td>
+	       	%endfor
+	       	<td>&nbsp;</td>
+	       	</tr>
+		</table>
+	%endfor
+	</div>
+	
+	<div class="rightColumn">
+	<p>
+	Cell Name: ${unit.recsite.old_id}<br />
+    Regions: ${','.join(unit_regions)}<br />
+    Response Info Bound: ${'%0.1f bits (%0.1f, %0.1f)' % (class_perf.info_mean, class_perf.info_lower, class_perf.info_upper)}<br />
+    <a href="models_best.html">Best Models Across Regularizations</a><br />
+    Top 10:<br />
+    <ol>
+    %for s in top10:
+    	<li>${'%0.2f +/- %0.2f' % (s.perf_mean, s.perf_std)}: <a href="${'model_%s_%s_%0.2f.html' % (s.preproc_type, s.model_type, s.threshold)}">${s.preproc_type},${s.model_type},${'%0.2f' % s.threshold}</a></li>    
+    %endfor
+    </ol>
+    </p>
+	</div>
+		
+</body>
+</html>

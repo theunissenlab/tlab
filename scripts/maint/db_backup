@@ -1,0 +1,6 @@
+#!bin/tcsh
+
+DATESTRING=$(date +%Y-%m-%d)
+BACKUPDIR=/auto/fdata/channing/DB
+FILENAME=$BACKUPDIR/backup$DATESTRING.sql
+mysqldump --all-databases -ubackup_admin -pbackup --result-file=$FILENAME

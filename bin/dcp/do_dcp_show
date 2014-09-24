@@ -1,0 +1,54 @@
+if test $# -ne 6
+	then echo "Usage: do_dcp_show preprocessdatapath filename rawdatapath neuron dir \"trials\""
+	     exit 2
+fi
+respath=$1
+file=$2 #blus-0252
+path=$3 #/data/cfry/BLUS0252/
+neuron=$4 #12
+name=$5
+name=$name"_strfpak"
+numbers=$6 #"4 5 6 7 8 9 10 11 12 13 14"
+val=""
+for i in $numbers
+do
+   val=$path$file"."$neuron"."$i
+	if [ -r  $val ]
+		then echo $val "exists"
+	else
+		echo "error: " $val "does not exist, exiting script"
+		exit 2
+	fi
+done 
+val=" "
+for i in $numbers 
+do
+val=$val" "$path$file"."$neuron"."$i
+done
+if [ -d $respath"/"$file ]
+	then echo "directory" $respath"/"$file "exists"
+	else echo "creating directory" $respath"/"$file
+	mkdir $respath
+	mkdir $respath"/"$file
+fi
+respath=$respath"/"$file
+if [ -d $respath"/"$neuron ]
+	then echo "directory" $respath"/"$neuron "exists"
+	else echo "creating directory" $respath"/"$neuron
+	mkdir $respath"/"$neuron
+fi
+if [ -d $respath"/"$neuron"/"$name ]
+	then echo "directory" $respath"/"$neuron"/"$name "exists"
+	else echo "creating directory" $respath"/"$neuron"/"$name
+	mkdir $respath"/"$neuron"/"$name
+fi
+
+# third line down put in optional arguments like bandwidth etc for example here is shown -win 300 and -f_width 125  - filter freq limits are not shown here because default are used #
+
+cd $respath"/"$neuron"/"$name
+echo "running dcp_show"
+dcp_show -f_width 125 $val
+
+echo "all done!"
+echo "ready to run STRFPAK in matlab"
+

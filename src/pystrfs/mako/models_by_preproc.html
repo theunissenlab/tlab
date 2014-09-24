@@ -1,0 +1,53 @@
+
+<html>
+<head>
+<title>${all_data.unit.recsite.old_id} | ${all_data.preproc_type}</title>
+<link href="/auto/k6/mschachter/pystrfs/web/style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	
+	<h3>STRFS</h3>
+	<table border="0">
+	
+	<tr><th>&nbsp;</th>
+	%for mtype in all_data.model_types_strfs:
+		<th>${mtype}</th>
+	%endfor
+	</tr>
+	%for thresh in all_data.thresholds:
+	<tr>
+		<td><b>${'%0.2f' % thresh}</b></td>
+		%for mtype in all_data.model_types_strfs:
+		<td>
+			<a href="${all_data.img[thresh][mtype].strf_prefix}.svg"><img src="${all_data.img[thresh][mtype].strf_prefix}.png" border="0" /></a>
+		</td>		
+		%endfor
+	</tr>
+	%endfor
+	
+	</table>
+	
+	
+	<h3>Output NLs</h3>
+	<table border="0">
+	
+	<tr><th>&nbsp;</th>
+	%for mtype in all_data.model_types_nls:
+		<th>${mtype}</th>
+	%endfor
+	</tr>
+	%for thresh in all_data.thresholds:
+	<tr>
+		<td><b>${'%0.2f' % thresh}</b></td>
+		%for mtype in all_data.model_types_nls:
+		<td>
+			<a href="${all_data.img[thresh][mtype].nl_prefix}.svg"><img src="${all_data.img[thresh][mtype].nl_prefix}.png" border="0" /></a>
+		</td>		
+		%endfor
+	</tr>
+	%endfor
+	
+	</table>
+	
+</body>
+</html>

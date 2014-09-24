@@ -1,0 +1,6 @@
+#csh 
+#script to fix path in all data files in one directory
+
+foreach file ( $1* )
+   dcp_fixpath $file;
+end
