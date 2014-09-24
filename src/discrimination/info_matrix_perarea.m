@@ -130,6 +130,7 @@ if FigFlag==1
     xlabel('Mutual Information of the call matrix mi_tot (bits)')
     ylabel('Proportion of MI in diagonal and category')
     axis([0 6 0 1])
+    pause
 end
 
 %% alternative way to calculate mi_tot

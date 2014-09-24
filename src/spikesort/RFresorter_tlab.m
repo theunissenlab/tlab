@@ -878,8 +878,6 @@ if ismac()
     elseif strcmp(strtok(username), 'Solveig')
         if strncmp('/auto/fdata/solveig',source_directory, 19)
             source_directory = strcat('/Users/Solveig/PhD', source_directory(20:end));
-        elseif strncmp('/auto/k8/fdata/solveig/' ,source_directory, 23)
-            source_directory = strcat('/Users/Solveig/PhD/ELECTROPHY/Export_Data', source_directory(34:end));
         elseif strncmp('/auto/fdata/julie',source_directory, 17)
             source_directory = strcat('/Users/frederictheunissen/Documents/Data/Julie', source_directory(18:end));
         end
@@ -919,30 +917,34 @@ snips = zeros(nsnipsTot,ntsnip);
 cnt=0;
 for iclass=1:nclasses
     a = dir([source_directory '/' unit.site '*' unit.classes{iclass} '*waves.f32']);
-    fprintf(1, 'Reading and storing snipets from wave file: %s\n',  [source_directory '/' a.name]);
-    fsnip = fopen([source_directory '/' a.name], 'r');
-    for nfi=1:nfiles(iclass)   
-        response = unit.class_responses.(unit.classes{iclass}){nfi};    
-        ntrials = length(response.trials); 
+    if isempty(a)
+        fprintf(1, 'No waves.f32 available for %s protocol\n the code will look for the next available protocol\n', unit.classes{iclass});
+    else
+        fprintf(1, 'Reading and storing snipets from wave file: %s\n',  [source_directory '/' a.name]);
+        fsnip = fopen([source_directory '/' a.name], 'r');
+        for nfi=1:nfiles(iclass)   
+            response = unit.class_responses.(unit.classes{iclass}){nfi};    
+            ntrials = length(response.trials); 
         
-        for it=1:ntrials
-            trial = response.trials{it};
-            spike_id_trials = trial.spikeIds;
-            ns = length(spike_id_trials);
-            for is=1:ns
-                cnt = cnt+1;
-                fseek(fsnip, (spike_id_trials(is)-1)*4*ntsnip, 'bof');
-                snips(cnt,:) = fread(fsnip, ntsnip, 'float32');
-                % Note that we must use the full name if we want to store
-                % it.
-                unit.class_responses.(unit.classes{iclass}){nfi}.trials{it}.spikeWav(is,:) = snips(cnt,:);
-                if mod(cnt, 5000)==0
-                    fprintf('.')
+            for it=1:ntrials
+                trial = response.trials{it};
+                spike_id_trials = trial.spikeIds;
+                ns = length(spike_id_trials);
+                for is=1:ns
+                    cnt = cnt+1;
+                    fseek(fsnip, (spike_id_trials(is)-1)*4*ntsnip, 'bof');
+                    snips(cnt,:) = fread(fsnip, ntsnip, 'float32');
+                    % Note that we must use the full name if we want to store
+                    % it.
+                    unit.class_responses.(unit.classes{iclass}){nfi}.trials{it}.spikeWav(is,:) = snips(cnt,:);
+                    if mod(cnt, 5000)==0
+                        fprintf('.')
+                    end
                 end
             end
         end
+        fclose(fsnip);
     end
-    fclose(fsnip);
 end
 
 shuffle = randperm(size(snips,1));
