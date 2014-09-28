@@ -6,6 +6,9 @@ function VocSectioningAmp(Folder, pl)
 songfilt_args.f_low = 250;
 songfilt_args.f_high = 12000;
 songfilt_args.db_att = 0;
+
+
+
 % duration=0.2; % duration in s of cuts
 % endMax = 0.6;  % find the maximum in the first 600 ms  - this is for the
 % neuro.
@@ -15,8 +18,13 @@ endMax = 4.0;  % find the maximum in the first 4 s
 
 TDTsamprate = 24414;
 
+% Generate filter
+nfilt = 512;
+call_filter = fir1(nfilt,[songfilt_args.f_low*2.0/TDTsamprate, songfilt_args.f_high*2.0/TDTsamprate]);
+call_filter_short = fir1(64,[songfilt_args.f_low*2.0/TDTsamprate, songfilt_args.f_high*2.0/TDTsamprate]);
+
 if nargin<2
-    pl=1; %set to 0 for no graph; 1 if you want to see final results per stim; 
+    pl=0; %set to 0 for no graph; 1 if you want to see final results per stim; 
 end
 
 %% Find the sound files on the cluster or on a local mac machine.
@@ -45,6 +53,9 @@ ncutsTot = 0;
 soundCutsTot = [];
 spectroCutsTot = [];
 
+% Make a file to save power
+powerFile = fullfile(DataBasePath, 'ampcheck.txt');
+fidPower = fopen(powerFile, 'w');
 
 %Loop through files, detect sound periods
 for isound = 1:nfiles
@@ -68,9 +79,38 @@ for isound = 1:nfiles
         sound_in=(sound_in(:,1) + sound_in(:,2))/2;
     end
     
-    % Filter the sound
-    sound_in = songfilt_call(sound_in,samprate,songfilt_args.f_low,songfilt_args.f_high,...
-        songfilt_args.db_att, voctype);
+    % Read the Bird info file
+    fid = fopen('/Users/frederictheunissen/Documents/Data/Julie/FullVocalizationBank/Birds_List_Acoustic.txt', 'r');
+    birdInfo = textscan(fid, '%s %s %s %s %s %d');
+    nInfo = length(birdInfo{1});
+    fclose(fid);
+    
+    % Find matching bird
+    birdInfoInd = 0;
+    for iinfo=1:nInfo
+        if (strcmp(birdInfo{1}(iinfo), birdname) )
+            birdInfoInd = iinfo;
+            break;
+        end
+    end
+    
+    if birdInfoInd == 0
+        fprintf(1, 'Warning: Could not find entry for bird %s. Skipping.\n', birdname);
+        continue;
+    end
+    % Readjust amplitude
+    recLevel = birdInfo{6}(birdInfoInd);
+    corrValTheo = power(10, (double(recLevel) - 100)/50);  % See recLevelAnal.m
+    sound_in = sound_in./corrValTheo;
+    
+    % Filter the sound - we use to call songfilt_call here - which makes
+    % sense for the Neuro data.
+    if length(sound_in) < 3*nfilt
+        sound_in = filtfilt(call_filter_short, 1, sound_in);
+    else
+        sound_in = filtfilt(call_filter, 1, sound_in);
+    end
+    fprintf(fidPower, '%s %s %d %f\n', birdname, voctype, recLevel, std(sound_in));
     
     % Find the enveloppe
     amp_env = enveloppe_estimator(sound_in, samprate, 20, samprate);
@@ -135,6 +175,8 @@ for isound = 1:nfiles
         pause();
     end
 end
+
+fclose(fidPower);
 
    
 %% Save data to mat file
