@@ -180,6 +180,6 @@ fclose(fidPower);
 
    
 %% Save data to mat file
-save -V7.3 vocCuts.mat ncutsTot to fo ncutsTot soundCutsTot spectroCutsTot birdNameCuts vocTypeCuts samprate
+save -V7.3 /Users/frederictheunissen/Documents/Data/Julie/FullVocalizationBank/vocCuts.mat ncutsTot to fo ncutsTot soundCutsTot spectroCutsTot birdNameCuts vocTypeCuts samprate
 
      
