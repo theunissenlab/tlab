@@ -1,4 +1,4 @@
-function [cf, bw, forward_f_fit] = fit_cf_bw(f, forward);
+function [cf, bw, forward_f_fit] = fit_cf_bw(f, forward)
 % fits the spectral slice with largest amp with a guassian to get bandwidth
 % The cf is found at the peak
 
