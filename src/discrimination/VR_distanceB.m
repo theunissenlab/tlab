@@ -1,4 +1,4 @@
-function d_VR = VR_distanceB(spike_times1, spike_times2, stim_len1, stim_len2, winSize, num_trains, weights, templateSize, norm_flg, shift_ST, gauss_flg)
+function [d_VR, template_wav, test_wav] = VR_distanceB(spike_times1, spike_times2, stim_len1, stim_len2, winSize, num_trains, weights, templateSize, norm_flg, shift_ST, gauss_flg)
 % Calculates the Von Rossum distance between a spike train and a template
 % constructed from a collection of #num_trains spike trains
 % the weights are not used here but are needed for the ensemble version of

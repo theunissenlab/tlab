@@ -916,8 +916,10 @@ snips = zeros(nsnipsTot,ntsnip);
 
 cnt=0;
 for iclass=1:nclasses
-    a = dir([source_directory '/' unit.site '*' unit.classes{iclass} '*waves.f32']);
+    fsearchname = [source_directory '/' unit.site '*' unit.classes{iclass} '*waves.f32'];
+    a = dir(fsearchname);
     if isempty(a)
+        fprintf(1, 'Looking for waves.f32 file using %s and FAILED:\n', fsearchname);
         fprintf(1, 'No waves.f32 available for %s protocol\n the code will look for the next available protocol\n', unit.classes{iclass});
     else
         fprintf(1, 'Reading and storing snipets from wave file: %s\n',  [source_directory '/' a.name]);
