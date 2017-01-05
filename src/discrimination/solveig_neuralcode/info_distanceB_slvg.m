@@ -1,4 +1,4 @@
-function [percorrect, mi_confusion, zdT, pzdT, mi_zdT, mi_zdT_nc, zdS, pzdS, mi_zdS, mi_zdS_nc, confusion_matrix, ncountT] = info_distanceB(nfiles, spike_times, stim_len, distfunc, distfuncparam , debug_flg)
+function [percorrect, mi_confusion, zdT, pzdT, mi_zdT, mi_zdT_nc, zdS, pzdS, mi_zdS, mi_zdS_nc, confusion_matrix, ncountT,Distance_allOtherStims, Response_allStims] = info_distanceB_slvg(nfiles, spike_times, stim_len, distfunc, distfuncparam , debug_flg)
 
 % Reinsert this if not using the confusion matrix!!!
 
@@ -14,6 +14,21 @@ if nargin<6
     debug_flg = 0;                      % Turns debugging on and off
 end
 
+% Find the minimum stim length
+templateSize = min(stim_len);
+
+if nargin<5
+   distfuncparam = templateSize; % Fix the Window parameter of SR_distanceB or VR_distanceB to the size of the template if nothing is specified 
+   s=functions(distfunc);
+   if strcmp(s.function, 'VR_distanceB')
+        fprintf('WARNING: No Window size was specified, the length of the stimulus is used as a window size for VR_distanceB/n');
+   end
+end
+% Initialize a matrix that will contain the average distance (over trials) of each stim
+% (rows) to the other stims (columns)
+Distance_allOtherStims = nan(nfiles);
+Response_allStims = cell(nfiles,1);
+
 confusion_matrix = zeros(nfiles);   % Stores a matrix of confusiton vectors for each song file
 zdT = 0;                                % Stores the updating z-score for a trial
 pzdT = 0;                               % Stores the percentage correct based on a gaussian model (by trial)
@@ -28,37 +43,39 @@ ncountS = 0;                            % Stores the updated number of SONGS ana
 
 
 
-% Find the minimum stim length
-templateSize = min(stim_len);
 
-
-gaussflg=0; % change for info_distanceB_slvg (22 Jan 2014). We go for exponential smoothing as a default.
-if (gaussflg == 1)
-   fprintf(1, 'Info_distanceB is applying a gaussian smoothing of winsize %d on spike trains\n', distfuncparam)
+% Set the parameters of the distance calculations
+s=functions(distfunc);
+if distfuncparam==templateSize || unique(round(stim_len))==round(templateSize) %no sliding if the size of the window is of the size of the spike train or for equally long stims
+        shiftflg=0;
 else
-   fprintf(1,'Info_distanceB is applying a exponential smoothing of winsize %d on spike trains\n', distfuncparam);
+        shiftflg=1;
 end
+gaussflg=0; % We go for exponential smoothing as a default.
+normflg=0; % We go for no normalization of spike patterns by default, so we take average spike rate differences into account
 
-normflg=0;
-if (normflg == 1)
-   fprintf(1, 'Info_distanceB is using distances between templates normalized by rate\n')
-else
-   fprintf(1,'Info_distanceB is using distances between non-rate-normalized templates\n');
-end 
+if strcmp(s.function, 'VR_distanceB')
+    fprintf(1, 'Info_distanceB is calculating the Van Rossum distance between spike patterns\n');
+    if (gaussflg == 1)
+       fprintf(1, 'Info_distanceB is applying a gaussian smoothing of winsize %d on spike trains\n', distfuncparam);
+    else
+       fprintf(1,'Info_distanceB is applying a exponential smoothing of winsize %d on spike trains\n', distfuncparam);
+    end
+    
+    if (normflg == 1)
+       fprintf(1, 'Info_distanceB is using distances between templates normalized by rate\n');
+    else
+       fprintf(1,'Info_distanceB is using distances between non-rate-normalized templates\n');
+    end 
 
-if distfuncparam==templateSize %no sliding if the size of the window is of the size of the spike train
-    shiftflg=0;
-else
-    shiftflg=1;
+    if (shiftflg == 1)
+       fprintf(1, 'Info_distanceB is calculating best distances between templates by sliding templates\n');
+    else
+       fprintf(1,'Info_distanceB is calculating the distance between aligned templates\n');
+    end
+elseif strcmp(s.function, 'SR_distanceB')
+    fprintf(1, 'Info_distanceB is calculating the distance between the spike counts using SR_distanceB\n');
 end
-shiftflg=0; % added for info_distanceB_slvg (22 Jan 2014). No need for the shift for equally long stims.
-
-if (shiftflg == 1)
-   fprintf(1, 'Info_distanceB calculating best distances between templates by sliding templates\n')
-else
-   fprintf(1,'Info_distanceB calculating the distance between aligned templates\n');
-end
-
 
 %% Get weights for each neuron
 nweights = cell_weights(spike_times,stim_len,distfuncparam);%%What is this code doing in case of h5 file only 1 unit per file, so nweights=1
@@ -74,8 +91,8 @@ for nf1=1:nfiles
     nt1 = length(spike_times{nf1});     % Calculate the number of trials in this file
   
     distance_self = zeros(1, nt1);      % Initialize the self distances for each trial in this file
-    distance_other = zeros(1, nfiles);   % Initialize the other distances for ech trial in this file
-    
+    distance_other = zeros(nt1, nfiles);   % Initialize the other distances for all trials in this file
+    response_self = cell(nt1,1);              % Initialize the cell containing the wavforms (VR_distanceB) or spike count (SR_distanceB) for each trial in this file
     all_self_distance = [];                 %Stores all SELF distances for all trials of THIS song
     all_other_distance = [];                %Stores all OTHER distances for all trials of THIS song
 
@@ -118,7 +135,8 @@ for nf1=1:nfiles
 
         % Calculate distance from this spike train to the concatenated
         % spike train of all other "self" trials
-        distance_self(it1) = distfunc(Ispike_times, temp_spike_times, stim_len(nf1), stim_len(nf1), distfuncparam, nt1-1, nweights, templateSize, normflg, shiftflg, gaussflg);
+        [distance_self(it1),response_self{it1}] = distfunc(Ispike_times, temp_spike_times, stim_len(nf1), stim_len(nf1), distfuncparam, nt1-1, nweights, templateSize, normflg, shiftflg, gaussflg);
+        
         
         % Calculate the distance from "self" to a random template from the other stimulus
         % presentations
@@ -173,11 +191,11 @@ for nf1=1:nfiles
                 
             % Calculate the distance between the current "self" trial
             % and the "other" template
-            distance_other(nf2) = distfunc(Ispike_times, temp_spike_times, stim_len(nf1), stim_len(nf2), distfuncparam, nt2-1, nweights,templateSize, normflg, shiftflg, gaussflg);
+            distance_other(nt1,nf2) = distfunc(Ispike_times, temp_spike_times, stim_len(nf1), stim_len(nf2), distfuncparam, nt2-1, nweights,templateSize, normflg, shiftflg, gaussflg);
         end
         
         % distance_other also includes a zero distance for nf1==nf2
-        distance_other_trunc = distance_other;
+        distance_other_trunc = distance_other(nt1,:);
         distance_other_trunc(nf1) = [];
         
         % Recenter the distribution of distances to zero
@@ -204,7 +222,7 @@ for nf1=1:nfiles
             if nf2 == nf1                               % If on the "self" file...
                 distance_samp(nf2)= distance_self(it1); % Store the "self" distance for the current self trial
             else
-                distance_samp(nf2) = distance_other(nf2);  % Store the "other" distance for the current other file
+                distance_samp(nf2) = distance_other(nt1,nf2);  % Store the "other" distance for the current other file
             end
         end
 
@@ -298,7 +316,11 @@ for nf1=1:nfiles
 
     end
     
-    %keyboard
+    % Save the average distances (over trials) of that stim to other stims
+    Distance_allOtherStims(nf1,:)= mean(distance_other,1);
+    
+    % Save the average spike pattern or spike count for that stim
+    Response_allStims{nf1} = mean(cell2mat(response_self),1);
     
     % Calculate Z scores for this song
     mean_selfS = mean(all_self_distance);
@@ -393,7 +415,7 @@ mi_confusion = info_matrix(confusion_matrix);
 % 3.3)
 percorrect = sum(diag(confusion_matrix));
 
-% Calculate the average z-score, guassian percent correct, and
+% Calculate the average z-score, gaussian percent correct, and
 % kl_divergence information
 zdT = zdT./ncountT;
 pzdT = pzdT./ncountT;
