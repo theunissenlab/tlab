@@ -20,11 +20,13 @@ SpikeID =  find(trans_spikes);% This is the linear index of the spikes in the in
 
 if isempty(SpikeID);
     spikesfiltered=spikes;
+    Spikeh = [];
     display('there are no spikes'); % the output is the unchanged input
     return;
 end
 if length(SpikeID)==1;
     spikesfiltered=ones(size(spikes))/size(spikes,2); % the input is a matrix (same size as input) of ones divided over the number of trials
+    Spikeh = [];
     display('only one spike');
     return;
 end

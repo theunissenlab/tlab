@@ -16,7 +16,7 @@ function [s, to, fo, pg, tError, fError] = GaussianSpectrum(input, increment, wi
 %%%%%%%%%%%%%%%%%%%%%%%
 % Massage the input
 %%%%%%%%%%%%%%%%%%%%%%%
-debugfig = 1;
+debugfig = 0;
 
 % Enforce even winLength to have a symmetric window
 if rem(winLength, 2) == 1
