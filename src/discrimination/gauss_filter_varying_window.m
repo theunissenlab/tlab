@@ -1,6 +1,14 @@
-function [spikesfiltered, Spikeh] = gauss_filter_varying_window(spikes,  alpha_param, Fig)
+function [spikesfiltered, Spikeh, Hwidth] = gauss_filter_varying_window(spikes,  alpha_param, Fig)
 %[spikesfiltered] = gauss_filter_varying_window(spikes, sd);
 %this smooths with a gaussian window, with sd=sd to the furthest neighbor of psth (mean over all trials).
+
+% spikesfiltered is the same size as spikes and is the gaussian filtered
+% output
+% Spikeh contains the distance to the nearest neighbor of each spike
+% Hwidth is a structure that contains three vectors of the same length as 
+% the number of spikes in the input spikes: Hwidth.trial is the trial id,
+% Hwidth.timebin is the time bin position of each spike and Hwidth.hwidth
+% is 1/2 the width of the gaussian each spike is convolved with.
 
 % spikes is an n*t matrix with n the number of responses obtained to the...
 ...same stimulus presentation (can be one), and t the number of time bins in ms
@@ -31,7 +39,7 @@ if length(SpikeID)==1;
     return;
 end
 
-Spikeh = length(SpikeID);% This will the contain the distance to the nearest neighbor of each spike
+Spikeh = length(SpikeID);% This will contain the distance to the nearest neighbor of each spike
 ss=0;
 for nt=1:size(spikes,1)
     index=find(spikes(nt,:));% this is the bins in which there was at least a spike over all trials
@@ -67,12 +75,18 @@ if Fig
         cla
     end
 end
-Ymaxcc=nan(length(SpikeID),1);
+Ymaxcc = nan(length(SpikeID),1);
+Hwidth.trial = nan(length(SpikeID),1);
+Hwidth.timebin = nan(length(SpikeID),1);
+Hwidth.hwidth = nan(length(SpikeID),1);
 for a = 1:length(SpikeID);
     hwidth=Spikeh(a)*alpha_param; % we want the number of points of the gaussian to be proportional to alpha so that the distance to the nearest spike is always = 1sd
     tempwin=gausswin(hwidth*2+1, alpha_param)/sum(gausswin(hwidth*2+1, alpha_param));
     tempgauss = tempwin';
     [currenttime,trial]=ind2sub(size(trans_spikes),SpikeID(a));
+    Hwidth.trial(a) = trial;
+    Hwidth.timebin(a) = currenttime;
+    Hwidth.hwidth(a) = hwidth;
     if currenttime-(hwidth+1)<=0 % The gaussian left half width is larger than the distance of the spike to the begining of the spike train
         startindex_temp = 1;
         startindex_gauss = hwidth+1 -currenttime+1;
