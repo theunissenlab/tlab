@@ -1,6 +1,6 @@
-function [spikesfiltered, Spikeh, Hwidth] = gauss_filter_varying_window(spikes,  alpha_param, Fig)
+function [spikesfiltered, Spikeh, Hwidth] = gauss_filter_varying_window(spikes,  alpha_param,Kth_neigh, Fig)
 %[spikesfiltered] = gauss_filter_varying_window(spikes, sd);
-%this smooths with a gaussian window, with sd=sd to the furthest neighbor of psth (mean over all trials).
+%this smooths with a gaussian window, with sd=sd to the kth neighbor of psth (mean over all trials).
 
 % spikesfiltered is the same size as spikes and is the gaussian filtered
 % output
@@ -12,6 +12,8 @@ function [spikesfiltered, Spikeh, Hwidth] = gauss_filter_varying_window(spikes, 
 
 % spikes is an n*t matrix with n the number of responses obtained to the...
 ...same stimulus presentation (can be one), and t the number of time bins in ms
+% Kth_neigh is the neighbor spike that determine the width of the gaussian
+% window
 
 %timevec is a row vector of times of all spikes present per trial
 %and includes 0 and size(spikes,2) at beginning and end of each trial
@@ -21,48 +23,54 @@ if nargin<2
     alpha_param=3;
 end
 if nargin<3
+    Kth_neigh = ones(size(spikes,1),1);% The first neighbor spike is set...
+    ... as default. Note that the best value is 1/2 number of trials for...
+        ... concatenated spike patterns of ntrials.
+end
+if nargin<4
     Fig=1; %set to 1 to see figures
 end
 trans_spikes=spikes';
 SpikeID =  find(trans_spikes);% This is the linear index of the spikes in the input matrix spikes
 
-if isempty(SpikeID);
+if isempty(SpikeID)
     spikesfiltered=spikes;
     Spikeh = [];
     Hwidth = [];
-    display('there are no spikes'); % the output is the unchanged input
+    fprintf(1,'there are no spikes\n'); % the output is the unchanged input
     return;
 end
-if length(SpikeID)==1;
+if length(SpikeID)==1
     spikesfiltered=ones(size(spikes))/size(spikes,2); % the input is a matrix (same size as input) of ones divided over the number of trials
     Spikeh = [];
     Hwidth = [];
-    display('only one spike');
+    fprintf(1,'only one spike\n');
     return;
 end
 
-Spikeh = length(SpikeID);% This will contain the distance to the nearest neighbor of each spike
+Spikeh = length(SpikeID);% This will contain the distance to the kst neighbor of each spike
 ss=0;
 for nt=1:size(spikes,1)
-    index=find(spikes(nt,:));% this is the bins in which there was at least a spike over all trials
-    timevec = [0 index size(spikes,2)+1];% This is to deal with the first and last spike distances
+    index=find(spikes(nt,:));% this is the bins in which there was at least a spike in this row
     for a = 1:length(index) % iterate through the number of bins that contain spikes
         ss=ss+1;
         currenttime=index(a);% this is the time bin where is the current spike
-        if spikes(nt,currenttime)>1% there is more than a spike in this time window
-            Spikeh(ss) = 1;%This is the smallest distance we can handle? 1ms?
+        if spikes(nt,currenttime)>=Kth_neigh(nt)% there is the number of neighbors requested in this time window
+            Spikeh(ss) = 1;%This is the smallest distance we can handle? 1 time bin?
         else
-            timeindex=find(timevec==index(a));% This is the position of the spike in timevec
-            futuretime=timevec(timeindex+1);% this is the arrival time of the following spike
-            pasttime=timevec(timeindex-1);% this is the arrival time of the preceding spike
-            after=futuretime-currenttime;% This is the time between the spike and the future spike
-            before=currenttime-pasttime;% This is the time between the spike and the preceeding spike
-            if futuretime==size(spikes,2)+1 % The current spike was the last spike
-                after=after*2+1; % More than double the time after the spike
-            elseif pasttime==0 % The current spike was the first spike of the trial
-                before=before*2+1; % more than double the time before the spike
+            K_future = a + Kth_neigh(nt) - (spikes(nt,currenttime)-1); % This is the position in index of the expected kth future neighbor spike
+            K_past = a - Kth_neigh(nt)- (spikes(nt,currenttime)-1); % This is the position in index of the expected kth past neighbor spike
+            if K_future>length(index) % there is no more than Kth_neigh(nt) spikes after the focus spike
+                after = 2*(Kth_neigh(nt))*(size(spikes,2) - currenttime + 1); % multiply the time after the spike until the end of the spike pattern by twice the # of neighbor spike  requested
+            else
+                after = index(K_future) - currenttime + 1;
             end
-            Spikeh(ss)=min([before after]);% This is the distance in number of bins to the nearest neighbor spike
+            if K_past<1 %there is no more than Kth_neigh(nt) spikes before the focus spike
+                before = 2*(Kth_neigh(nt))*(currenttime+1); % Multiply the time before the spike from the beginning of the spike pattern by twice the # of neighbor spike requested
+            else
+                before = currenttime - index(K_past) + 1;
+            end
+            Spikeh(ss)=min([before after]);% This is the distance in number of bins to the kst neighbor spike
         end
     end
 end
@@ -81,7 +89,7 @@ Ymaxcc = nan(length(SpikeID),1);
 Hwidth.trial = nan(length(SpikeID),1);
 Hwidth.timebin = nan(length(SpikeID),1);
 Hwidth.hwidth = nan(length(SpikeID),1);
-for a = 1:length(SpikeID);
+for a = 1:length(SpikeID)
     hwidth=Spikeh(a)*alpha_param; % we want the number of points of the gaussian to be proportional to alpha so that the distance to the nearest spike is always = 1sd
     tempwin=gausswin(hwidth*2+1, alpha_param)/sum(gausswin(hwidth*2+1, alpha_param));
     tempgauss = tempwin';
@@ -96,7 +104,7 @@ for a = 1:length(SpikeID);
         startindex_gauss=1;
         startindex_temp = currenttime-hwidth;
     end
-    if currenttime+hwidth>=size(spikes,2);% The gaussian right half width is larger than the distance of the spike to the end of the spike train
+    if currenttime+hwidth>=size(spikes,2) % The gaussian right half width is larger than the distance of the spike to the end of the spike train
         endindex_temp=size(spikes,2);
         endindex_gauss = hwidth+1 + size(spikes,2) -currenttime;
     else
@@ -106,8 +114,8 @@ for a = 1:length(SpikeID);
     temp(trial,startindex_temp:endindex_temp)=temp(trial,startindex_temp:endindex_temp) + spikes(trial,currenttime) * tempgauss(startindex_gauss:endindex_gauss);
     if Fig
         subplot(ntrials,1,trial)
-        plot(startindex_temp:endindex_temp, tempgauss(startindex_gauss:endindex_gauss),'-r')
-        Ymaxcc(a) = max(tempgauss(startindex_gauss:endindex_gauss));
+        plot(startindex_temp:endindex_temp, spikes(trial,currenttime) *tempgauss(startindex_gauss:endindex_gauss),'-r')
+        Ymaxcc(a) = max(spikes(trial,currenttime) *tempgauss(startindex_gauss:endindex_gauss));
         hold on
         plot([currenttime currenttime], [0 spikes(trial,currenttime)*0.1],'-k','LineWidth',1.5)
         hold on
@@ -118,7 +126,7 @@ end
 if Fig
     F2.Name='gaussian windows of all trials';
     subplot(ntrials,1,ntrials)
-    xlabel('Time in ms')
+    xlabel('Time in time bins')
 %     Ymaxcc=nan(length(F2.Children),1);
 %     for cc=1:length(F2.Children)
 %         Ymaxcc(cc) = F2.Children(cc).YLim(2);
@@ -153,15 +161,15 @@ if Fig
     end
     F3.Name=sprintf('Gaussian filtered spike train Alpha=%d', alpha_param);
     subplot(ntrials,1,1)
-    ylabel('spike rate spike/ms')
+    ylabel('spike rate spike/timebin')
     subplot(ntrials,1,ntrials)
-    xlabel('Time (ms)')
+    xlabel('Time (time bins)')
     hold off
     figure(4)
     cla
     [AX,H1,H2]=plotyy(1:size(spikes,2),mean(spikes,1),1:size(spikes,2),mean(spikesfiltered,1));
-    ylabel(AX(1),'Average Spike Count')
-    ylabel(AX(2), 'Filtered Spike rate')
+    ylabel(AX(1),'Average Spike pattern')
+    ylabel(AX(2), 'Filtered Spike pattern')
     xlabel('Time in ms')
     xlim(AX(1),[0 size(spikes,2)+1])
     xlim(AX(2),[0 size(spikes,2)+1])
