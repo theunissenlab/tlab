@@ -55,7 +55,7 @@ for nt=1:size(spikes,1)
     for a = 1:length(index) % iterate through the number of bins that contain spikes
         ss=ss+1;
         currenttime=index(a);% this is the time bin where is the current spike
-        if spikes(nt,currenttime)>=Kth_neigh(nt)% there is the number of neighbors requested in this time window
+        if spikes(nt,currenttime)>Kth_neigh(nt)% there is the number of neighbors requested in this time window
             Spikeh(ss) = 1;%This is the smallest distance we can handle? 1 time bin?
         else
             K_future = a + Kth_neigh(nt) - (spikes(nt,currenttime)-1); % This is the position in index of the expected kth future neighbor spike
