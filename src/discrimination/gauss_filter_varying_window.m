@@ -55,22 +55,32 @@ for nt=1:size(spikes,1)
     for a = 1:length(index) % iterate through the number of bins that contain spikes
         ss=ss+1;
         currenttime=index(a);% this is the time bin where is the current spike
-        if spikes(nt,currenttime)>Kth_neigh(nt)% there is the number of neighbors requested in this time window
+        if Kth_neigh(nt) == fix(Kth_neigh(nt))
+            Kth_neigh_local=Kth_neigh(nt);
+        else
+            Kth_neigh_local = [floor(Kth_neigh(nt)) ceil(Kth_neigh(nt))];
+        end
+        if spikes(nt,currenttime)>max(Kth_neigh_local)% there is the number of neighbors requested in this time window
             Spikeh(ss) = 1;%This is the smallest distance we can handle? 1 time bin?
         else
-            K_future = a + Kth_neigh(nt) - (spikes(nt,currenttime)-1); % This is the position in index of the expected kth future neighbor spike
-            K_past = a - Kth_neigh(nt)- (spikes(nt,currenttime)-1); % This is the position in index of the expected kth past neighbor spike
-            if K_future>length(index) % there is no more than Kth_neigh(nt) spikes after the focus spike
-                after = 2*(Kth_neigh(nt))*(size(spikes,2) - currenttime + 1); % multiply the time after the spike until the end of the spike pattern by twice the # of neighbor spike  requested
-            else
-                after = index(K_future) - currenttime + 1;
+            K_future = a - (spikes(nt,currenttime)-1) + Kth_neigh_local ; % This is the position in index of the expected kth future neighbor spike(s)
+            K_past = a - (spikes(nt,currenttime)-1) - Kth_neigh_local; % This is the position in index of the expected kth past neighbor spike
+            after = nan(1,length(Kth_neigh_local));
+            before = nan(1,length(Kth_neigh_local));
+            for kk=1:length(Kth_neigh_local)
+                if K_future(kk)>length(index) % there is no more than Kth_neigh(nt) spikes after the focus spike
+                    after(kk) = 2*(Kth_neigh_local(kk))*(size(spikes,2) - currenttime + 1); % multiply the time after the spike until the end of the spike pattern by twice the # of neighbor spike  requested
+                else
+                    after(kk) = index(K_future(kk)) - currenttime + 1;
+                end
+                if K_past(kk)<1 %there is no more than Kth_neigh(nt) spikes before the focus spike
+                    before(kk) = 2*(Kth_neigh_local(kk))*(currenttime+1); % Multiply the time before the spike from the beginning of the spike pattern by twice the # of neighbor spike requested
+                else
+                    before(kk) = currenttime - index(K_past(kk)) + 1;
+                end
             end
-            if K_past<1 %there is no more than Kth_neigh(nt) spikes before the focus spike
-                before = 2*(Kth_neigh(nt))*(currenttime+1); % Multiply the time before the spike from the beginning of the spike pattern by twice the # of neighbor spike requested
-            else
-                before = currenttime - index(K_past) + 1;
-            end
-            Spikeh(ss)=min([before after]);% This is the distance in number of bins to the kst neighbor spike
+            
+            Spikeh(ss)=min([mean(before) mean(after)]);% This is the distance in number of bins to the kst neighbor spike
         end
     end
 end
@@ -90,7 +100,7 @@ Hwidth.trial = nan(length(SpikeID),1);
 Hwidth.timebin = nan(length(SpikeID),1);
 Hwidth.hwidth = nan(length(SpikeID),1);
 for a = 1:length(SpikeID)
-    hwidth=Spikeh(a)*alpha_param; % we want the number of points of the gaussian to be proportional to alpha so that the distance to the nearest spike is always = 1sd
+    hwidth=round(Spikeh(a)*alpha_param); % we want the number of points of the gaussian to be proportional to alpha so that the distance to the nearest spike is always = 1sd
     tempwin=gausswin(hwidth*2+1, alpha_param)/sum(gausswin(hwidth*2+1, alpha_param));
     tempgauss = tempwin';
     [currenttime,trial]=ind2sub(size(trans_spikes),SpikeID(a));
