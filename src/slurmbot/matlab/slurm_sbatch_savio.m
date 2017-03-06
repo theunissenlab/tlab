@@ -21,16 +21,15 @@
 %   Returns:
 %       jobIds: a vector of job IDs, the same size as cmds
 %
-%   Author: Mike Schachter (mike.schachter@gmail.com) modified by Julie
-%   Elie
+%   Author:  Julie Elie
 %
 function jobIds = slurm_sbatch_savio(cmds, jobParams, matlabRunner)
 
     DEBUG = isfield(jobParams, 'debug');
 
     if nargin < 3
-        matlabRunner = '/global/home/users/jelie/CODE/bin/matlabbg';
-        %matlabRunner = 'echo';
+        %matlabRunner = '/global/home/users/jelie/CODE/bin/matlabbg';
+        matlabRunner = 'matlab';
     end
     
     if ~iscell(cmds)
@@ -68,7 +67,11 @@ function jobIds = slurm_sbatch_savio(cmds, jobParams, matlabRunner)
     %% write out executable command in script
     % Name for the file
        [Pathstr,Name,Ext]=fileparts(cmds{1});
-       tempOut = ['ExJob' Name '.txt'];
+       if isfield(jobParams, 'K')
+           tempOut = sprintf('ExJob%s_%d.txt', Name, jobParams.K);
+       else
+           tempOut = ['ExJob' Name '.txt'];
+       end
        fid = fopen(tempOut, 'w');
        fprintf(fid, '#!/bin/bash\n');
        fprintf(fid, '# Job name:\n#SBATCH --job-name=%s\n#\n',jobParams.Name);
@@ -78,8 +81,8 @@ function jobIds = slurm_sbatch_savio(cmds, jobParams, matlabRunner)
        fprintf(fid, '# Processors:\n#SBATCH --ntasks=%d\n#\n',jobParams.NTasks);
        fprintf(fid, '# Core per processor:\n#SBATCH --cpus-per-task=%d\n#\n',jobParams.CPU);
        fprintf(fid, '# Wall clock limit:\n#SBATCH --time=%s\n#\n',jobParams.TimeLimit);
-       fprintf(fid, '# Error file:\n#SBATCH --error=%s\n#\n',jobParams.err);
-       fprintf(fid, '# Output file:\n#SBATCH --output=%s\n#\n',jobParams.out);
+       %fprintf(fid, '# Error file:\n#SBATCH --error=%s\n#\n',jobParams.err);
+       %fprintf(fid, '# Output file:\n#SBATCH --output=%s\n#\n',jobParams.out);
        
        mcmd = strrep(cmds{1}, '\n', '');
 
@@ -88,7 +91,7 @@ function jobIds = slurm_sbatch_savio(cmds, jobParams, matlabRunner)
 	 fprintf('tempOut=%s\n', tempOut);
 	 fprintf('mcmd=%s\n', mcmd);
        end
-       fprintf(fid, '## Run command\nmodule load matlab\n%s %s\necho "end of Batch script"\nexit\n',matlabRunner, mcmd);
+       fprintf(fid, '## Run command\nmodule load matlab\n%s -nosplash -nodesktop -logfile %s < \necho "end of Batch script"\nexit\n',matlabRunner, jobParams.out, mcmd);
        %fprintf(fid, '## Run command\n%s %s\n',matlabRunner, mcmd);
        fclose(fid);
        
