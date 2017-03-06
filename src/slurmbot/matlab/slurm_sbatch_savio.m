@@ -91,7 +91,7 @@ function jobIds = slurm_sbatch_savio(cmds, jobParams, matlabRunner)
 	 fprintf('tempOut=%s\n', tempOut);
 	 fprintf('mcmd=%s\n', mcmd);
        end
-       fprintf(fid, '## Run command\nmodule load matlab\n%s -nosplash -nodesktop -logfile %s < \necho "end of Batch script"\nexit\n',matlabRunner, jobParams.out, mcmd);
+       fprintf(fid, '## Run command\nmodule load matlab\n%s -nosplash -nodesktop -logfile %s < %s\necho "end of Batch script"\nexit\n',matlabRunner, jobParams.out, mcmd);
        %fprintf(fid, '## Run command\n%s %s\n',matlabRunner, mcmd);
        fclose(fid);
        
