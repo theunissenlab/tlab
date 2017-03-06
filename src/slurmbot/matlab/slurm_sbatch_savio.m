@@ -28,8 +28,8 @@ function jobIds = slurm_sbatch_savio(cmds, jobParams, matlabRunner)
     DEBUG = isfield(jobParams, 'debug');
 
     if nargin < 3
-        %matlabRunner = '/global/home/users/jelie/CODE/bin/matlabbg';
-        matlabRunner = 'matlab';
+        matlabRunner = '/global/home/users/jelie/CODE/bin/matlabbg';
+        %matlabRunner = 'matlab';
     end
     
     if ~iscell(cmds)
@@ -81,8 +81,8 @@ function jobIds = slurm_sbatch_savio(cmds, jobParams, matlabRunner)
        fprintf(fid, '# Processors:\n#SBATCH --ntasks=%d\n#\n',jobParams.NTasks);
        fprintf(fid, '# Core per processor:\n#SBATCH --cpus-per-task=%d\n#\n',jobParams.CPU);
        fprintf(fid, '# Wall clock limit:\n#SBATCH --time=%s\n#\n',jobParams.TimeLimit);
-       %fprintf(fid, '# Error file:\n#SBATCH --error=%s\n#\n',jobParams.err);
-       %fprintf(fid, '# Output file:\n#SBATCH --output=%s\n#\n',jobParams.out);
+       fprintf(fid, '# Error file:\n#SBATCH --error=%s\n#\n',jobParams.err);
+       fprintf(fid, '# Output file:\n#SBATCH --output=%s\n#\n',jobParams.out);
        
        mcmd = strrep(cmds{1}, '\n', '');
 
@@ -91,8 +91,8 @@ function jobIds = slurm_sbatch_savio(cmds, jobParams, matlabRunner)
 	 fprintf('tempOut=%s\n', tempOut);
 	 fprintf('mcmd=%s\n', mcmd);
        end
-       fprintf(fid, '## Run command\nmodule load matlab\n%s -nosplash -nodesktop -logfile %s < %s\necho "end of Batch script"\nexit\n',matlabRunner, jobParams.out, mcmd);
-       %fprintf(fid, '## Run command\n%s %s\n',matlabRunner, mcmd);
+       %fprintf(fid, '## Run command\nmodule load matlab\n%s -nosplash -nodesktop -logfile %s < %s\necho "end of Batch script"\nexit\n',matlabRunner, jobParams.out, mcmd);
+       fprintf(fid, '## Run command\n%s %s\n',matlabRunner, mcmd);
        fclose(fid);
        
 %        %% construct final sbatch command
