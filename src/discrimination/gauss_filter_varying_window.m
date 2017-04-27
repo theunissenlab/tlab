@@ -1,7 +1,19 @@
-function [spikesfiltered, Spikeh, Hwidth] = gauss_filter_varying_window(spikes,  alpha_param,Kth_neigh, Fig)
-%[spikesfiltered] = gauss_filter_varying_window(spikes, sd);
-%this smooths with a gaussian window, with sd=sd to the kth neighbor of psth (mean over all trials).
+function [spikesfiltered, Spikeh, Hwidth] = gauss_filter_varying_window(spikes, alpha_param, Kth_neigh, Fig)
 
+%Function to smooth spike rasters with a gaussian window, with sd=sd to the kth neighbor, in order to obtain estimate of
+% time varying firing rate.
+
+% Requires:
+% spikes is an n*t matrix with n the number of responses obtained to the
+% same stimulus presentation (can be one), and t the number of time bins in ms
+% Kth_neigh is the neighbor spike that determine the width of the gaussian
+% window- expecting a vector - one value for each row/trial in the spikes
+% matrix.
+
+% Optional Input parameters
+%
+
+% Returns:
 % spikesfiltered is the same size as spikes and is the gaussian filtered
 % output
 % Spikeh contains the distance to the nearest neighbor of each spike
@@ -10,14 +22,6 @@ function [spikesfiltered, Spikeh, Hwidth] = gauss_filter_varying_window(spikes, 
 % Hwidth.timebin is the time bin position of each spike and Hwidth.hwidth
 % is 1/2 the width of the gaussian each spike is convolved with.
 
-% spikes is an n*t matrix with n the number of responses obtained to the...
-...same stimulus presentation (can be one), and t the number of time bins in ms
-% Kth_neigh is the neighbor spike that determine the width of the gaussian
-% window
-
-%timevec is a row vector of times of all spikes present per trial
-%and includes 0 and size(spikes,2) at beginning and end of each trial
-%to identify first and last spike
 
 if nargin<2
     alpha_param=3;
@@ -31,7 +35,7 @@ if nargin<4
     Fig=1; %set to 1 to see figures
 end
 trans_spikes=spikes';
-SpikeID =  find(trans_spikes);% This is the linear index of the spikes in the input matrix spikes
+SpikeID =  find(trans_spikes);% This is the linear index of the bins containing sipke(s) in the input matrix spikes
 
 if isempty(SpikeID)
     spikesfiltered=spikes;
@@ -41,14 +45,14 @@ if isempty(SpikeID)
     return;
 end
 if length(SpikeID)==1
-    spikesfiltered=ones(size(spikes))/size(spikes,2); % the input is a matrix (same size as input) of ones divided over the number of trials
+    spikesfiltered=ones(size(spikes))/size(spikes,2); % the output is a matrix (same size as input) of ones divided over the number of trials
     Spikeh = [];
     Hwidth = [];
     fprintf(1,'only one spike\n');
     return;
 end
 
-Spikeh = length(SpikeID);% This will contain the distance to the kst neighbor of each spike
+Spikeh = length(SpikeID);% This will contain the distance to the kst neighbor of the spike(s) in each bin
 ss=0;
 for nt=1:size(spikes,1)
     index=find(spikes(nt,:));% this is the bins in which there was at least a spike in this row
@@ -61,13 +65,59 @@ for nt=1:size(spikes,1)
             Kth_neigh_local = [floor(Kth_neigh(nt)) ceil(Kth_neigh(nt))];
         end
         if spikes(nt,currenttime)>max(Kth_neigh_local)% there is the number of neighbors requested in this time window
-            Spikeh(ss) = 1;%This is the smallest distance we can handle? 1 time bin?
+            Spikeh(ss) = 1;      %This is the smallest distance we can handle: 1 time bin.
         else
-            K_future = a - (spikes(nt,currenttime)-1) + Kth_neigh_local ; % This is the position in index of the expected kth future neighbor spike(s)
-            K_past = a - (spikes(nt,currenttime)-1) - Kth_neigh_local; % This is the position in index of the expected kth past neighbor spike
-            after = nan(1,length(Kth_neigh_local));
-            before = nan(1,length(Kth_neigh_local));
+            K_future = a - (spikes(nt,currenttime)-1) + Kth_neigh_local ; % This is the furthest position in index (spiked bin) of the expected kth future neighbor spike(s) with the minimum assumption of one spike per bin
+            K_past = a - (spikes(nt,currenttime)-1) - Kth_neigh_local; % This is the furthest position in index (spiked bin) of the expected kth past neighbor spike(s) with the minimum assumption of one spike per bin
+
+            
+            afterSpikes = cumsum(spikes(nt,index(a:end)));            
+            afterSpikesCeil = find(afterSpikes >= (ceil(Kth_neigh(nt))-1), 1)-1;
+            afterSpikesFloor = find(afterSpikes >= (floor(Kth_neigh(nt))-1), 1)-1;
+            beforeSpikes = cumsum(spikes(nt,flip(index(1:a))));            
+            beforeSpikesCeil = find(beforeSpikes >= (ceil(Kth_neigh(nt))-1), 1)-1;
+            beforeSpikesFloor = find(beforeSpikes >= (floor(Kth_neigh(nt))-1), 1)-1;
+            
+            
+            if isempty(afterSpikesFloor)
+                if isempty(afterSpikesCeil)
+                    after = [];
+                else
+                    afterSpikesFloor = afterSpikesCeil;
+                    after = index(a+afterSpikesFloor) + ( Kth_neigh(nt) - floor(Kth_neigh(nt)) ) * (index(a+afterSpikesCeil) - index(a+afterSpikesFloor));
+                end
+            else
+                after = index(a+afterSpikesFloor) + ( Kth_neigh(nt) - floor(Kth_neigh(nt)) ) * (index(a+afterSpikesCeil) - index(a+afterSpikesFloor));
+            end
+            
+            if isempty(beforeSpikesFloor)
+                if isempty(beforeSpikesCeil)
+                    after = [];
+                else
+                    afterSpikesFloor = afterSpikesCeil;
+                    after = index(a+afterSpikesFloor) + ( Kth_neigh(nt) - floor(Kth_neigh(nt)) ) * (index(a+afterSpikesCeil) - index(a+afterSpikesFloor));
+                end
+            else
+                after = index(a+afterSpikesFloor) + ( Kth_neigh(nt) - floor(Kth_neigh(nt)) ) * (index(a+afterSpikesCeil) - index(a+afterSpikesFloor));
+            end
+                
+                
+                    
+                % qq de compliqué...
+            
+            
+            after = index(a+afterSpikesFloor) + ( Kth_neigh(nt) - floor(Kth_neigh(nt)) ) * (index(a+afterSpikesCeil) - index(a+afterSpikesFloor));
+            before = index(a-beforeSpikesCeil) + ( Kth_neigh(nt) - floor(Kth_neigh(nt)) ) * (index(a-beforeSpikesFloor) - index(a-beforeSpikesCeil));
+            
+            after = after - index(a);
+            if after == 0 
+                after = 1;
+            end
+            
             for kk=1:length(Kth_neigh_local)
+                afterSpikes = cumsum(spikes(nt,index(a:K_future)));
+                afterSpikesID = find(afterSpikes >= (Kth_neigh_local(kk)-1));
+                
                 if K_future(kk)>length(index) % there is no more than Kth_neigh(nt) spikes after the focus spike
                     after(kk) = 2*(Kth_neigh_local(kk))*(size(spikes,2) - currenttime + 1); % multiply the time after the spike until the end of the spike pattern by twice the # of neighbor spike  requested
                 else
