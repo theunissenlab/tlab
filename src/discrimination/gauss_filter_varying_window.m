@@ -110,8 +110,8 @@ for nt=1:size(Spikes,1)
         afterSpikesFloor = find(afterSpikes >= (floor(Kth_neigh(nt))), 1)-1; % Distance (in # of bins) to the bin in the future that contains the floor(Kth_neigh) nearest neighbor spike. ceil(Kth) and floor(Kth) are different if Kth is not a whole number
         % Second find the bins containing the Kth past spikes
         beforeSpikes = cumsum(Spikes(nt,flip(1:index(a))))-1; % cumulative number of other spikes in the present bin and in the precedent bins 
-        beforeSpikesCeil = find(beforeSpikes >= (ceil(Kth_neigh(nt))-1), 1)-1; % Distance (in # of bins) to the bin in the past that contains the ceil(Kth_neigh) nearest neighbor spike 
-        beforeSpikesFloor = find(beforeSpikes >= (floor(Kth_neigh(nt))-1), 1)-1; % Distance (in # of bins) to the bin in the past that contains the floor(Kth_neigh) nearest neighbor spike 
+        beforeSpikesCeil = find(beforeSpikes >= (ceil(Kth_neigh(nt))), 1)-1; % Distance (in # of bins) to the bin in the past that contains the ceil(Kth_neigh) nearest neighbor spike 
+        beforeSpikesFloor = find(beforeSpikes >= (floor(Kth_neigh(nt))), 1)-1; % Distance (in # of bins) to the bin in the past that contains the floor(Kth_neigh) nearest neighbor spike 
         
         % Treat the case where there are no Kth_neigh spikes in the future and
         % calculate the distance to the Kth_neigh future spike
