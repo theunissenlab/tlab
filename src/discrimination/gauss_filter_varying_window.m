@@ -121,7 +121,9 @@ for nt=1:size(Spikes,1)
             else % There is at least floor(Kth_neigh) spikes in the future
                 after = afterSpikesFloor; % Consider the distance to this floor(Kth_neigh) spike as our best estimate of the distance to the Kth_neigh spike in the future
             end
-        else % Linear interpolation between bin positions of floor(Kth_neigh) and ceil(Kth_neigh) nearest neighbor spike
+        elseif Kth_neigh(nt)==fix(Kth_neigh(nt)) % Kth_neigh is a whole number, afterSpikesCeil = afterSpikesFloor 
+            after = afterSpikesFloor;
+        else % Linear interpolation between bin positions of floor(Kth_neigh) and ceil(Kth_neigh) nearest neighbor spike if Kth_neigh is not a whole number
             after = afterSpikesFloor + (afterSpikesCeil - afterSpikesFloor) * (Kth_neigh(nt) - floor(Kth_neigh(nt))) / (ceil(Kth_neigh(nt)) - floor(Kth_neigh(nt))) ;
         end
         
@@ -133,7 +135,9 @@ for nt=1:size(Spikes,1)
             else % There is at least floor(Kth_neigh) spikes in the past
                 before = beforeSpikesFloor; % Consider the distance to this floor(Kth_neigh) spike as our best estimate of the distance to the Kth_neigh spike in the past
             end
-        else % Linear interpolation between bin positions of floor(Kth_neigh) and ceil(Kth_neigh) nearest neighbor spike
+        elseif Kth_neigh(nt)==fix(Kth_neigh(nt)) % Kth_neigh is a whole number, beforeSpikesCeil = beforeSpikesFloor 
+            before = beforeSpikesFloor;
+        else % Linear interpolation between bin positions of floor(Kth_neigh) and ceil(Kth_neigh) nearest neighbor spike if Kth_neigh is not a whole number
             before = beforeSpikesFloor + (beforeSpikesCeil - beforeSpikesFloor) * (Kth_neigh(nt) - floor(Kth_neigh(nt))) / (ceil(Kth_neigh(nt)) - floor(Kth_neigh(nt))) ;
         end
         
