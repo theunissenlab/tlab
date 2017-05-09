@@ -1,4 +1,4 @@
-function [Spikesfilt, BinSpikeh, Hwidth] = gauss_filter_varying_window(Spikes, Alpha_param, Kth_neigh, Fig)
+function [Spikesfilt, Hwidth] = gauss_filter_varying_window(Spikes, Alpha_param, Kth_neigh, Fig)
 
 % Function to smooth spike rasters with a gaussian window, with sd=sd to the kth neighbor, in order to obtain estimate of
 % time varying firing rate.
@@ -34,13 +34,9 @@ function [Spikesfilt, BinSpikeh, Hwidth] = gauss_filter_varying_window(Spikes, A
 % Spikesfilt    is the same size as spikes and is the gaussian filtered
 %               output of Spikes
 
-% BinSpikeh        a vector of length the number of bins containing at least
-%               one spike in the input matrix Spikes. Spikh contains the
-%               distance to the Kth_neigh neighbor of the spikes in each
-%               bin
 
-% Hwidth        a structure that contains three vectors of the same length 
-%               as Spikeh:
+% Hwidth        a structure that contains three vectors of length the number
+%               of bins containing at least one spike in the input matrix Spikes.
 %                       Hwidth.trial is the row/trial ID of the bin
 %                       Hwidth.timebin is the time bin position of each
 %                       bin containing at least a spike
@@ -62,19 +58,19 @@ end
 %% Sanitary check of the input
 % Calculate the linear index of the bins containing sipke(s) in the input matrix Spikes
 % This indexation is used to easily refer to bins containing spikes.
-trans_spikes=Spikes';
-SpikedBinID =  find(trans_spikes);
+Trans_spikes=Spikes';
+SpikedBinID =  find(Trans_spikes);
 
 if isempty(SpikedBinID)
     Spikesfilt=Spikes;
-    BinSpikeh = [];
+    Dist2KthSpike = [];
     Hwidth = [];
     fprintf(1,'there are no spikes\n'); % the output is the unchanged input
     return;
 end
 if length(SpikedBinID)==1
     Spikesfilt=ones(size(Spikes))/size(Spikes,2); % the output is a matrix (same size as input) of ones divided over the number of rows/trials
-    BinSpikeh = [];
+    Dist2KthSpike = [];
     Hwidth = [];
     fprintf(1,'only one spike\n');
     return;
@@ -82,19 +78,20 @@ end
 
 %% Distance to the Kth neighbor spike
 % This first part of the code identify the shortest distance in number of
-% bins to the Kth nearest neighbor spike for all the spikes in the matrix
-% Spikes. Spikes contained in the same bin have the same distance to the
-% Kth nearest neighbor spike. This distance is reported in BinSpikeh that
+% bins to the Kth nearest neighbor spike for all the spikes in each row of
+% the matrix Spikes. Each row is treated independantly of the others.
+% Spikes contained in the same bin have the same distance to the
+% Kth nearest neighbor spike. This distance is reported in Dist2KthSpike that
 % follows the linear indexation of bins containing spikes.
 
 % Initializing the output vector
-BinSpikeh = nan(1,length(SpikedBinID));
+Dist2KthSpike = nan(1,length(SpikedBinID));
 
 % Looping through rows/trials in Spikes and through the bins that contain spikes 
 ss=0; % This index keeps track of the indices of the bins containing spikes
 for nt=1:size(Spikes,1)
-    index=find(Spikes(nt,:));% this vector contains the indices of the bins in which there was at least a spike in this row
-    for a = 1:length(index)
+    Index=find(Spikes(nt,:));% this vector contains the indices of the bins in which there was at least a spike in this row
+    for a = 1:length(Index)
         ss=ss+1;
         
         % The strategy here is to find the bin containing the Kth nearest
@@ -105,57 +102,57 @@ for nt=1:size(Spikes,1)
         % interpolation.
         
         % First find the bins containing the Kth future spikes
-        afterSpikes = cumsum(Spikes(nt,index(a):end))-1; % cumulative number of other spikes in the present bin and in the following bins 
-        afterSpikesCeil = find(afterSpikes >= (ceil(Kth_neigh(nt))), 1)-1; % Distance (in # of bins) to the bin in the future that contains the ceil(Kth_neigh) nearest neighbor spike 
-        afterSpikesFloor = find(afterSpikes >= (floor(Kth_neigh(nt))), 1)-1; % Distance (in # of bins) to the bin in the future that contains the floor(Kth_neigh) nearest neighbor spike. ceil(Kth) and floor(Kth) are different if Kth is not a whole number
+        AfterSpikes = cumsum(Spikes(nt,Index(a):end))-1; % cumulative number of other spikes in the present bin and in the following bins 
+        AfterSpikesCeil = find(AfterSpikes >= (ceil(Kth_neigh(nt))), 1)-1; % Distance (in # of bins) to the bin in the future that contains the ceil(Kth_neigh) nearest neighbor spike 
+        AfterSpikesFloor = find(AfterSpikes >= (floor(Kth_neigh(nt))), 1)-1; % Distance (in # of bins) to the bin in the future that contains the floor(Kth_neigh) nearest neighbor spike. ceil(Kth) and floor(Kth) are different if Kth is not a whole number
         % Second find the bins containing the Kth past spikes
-        beforeSpikes = cumsum(Spikes(nt,flip(1:index(a))))-1; % cumulative number of other spikes in the present bin and in the precedent bins 
-        beforeSpikesCeil = find(beforeSpikes >= (ceil(Kth_neigh(nt))), 1)-1; % Distance (in # of bins) to the bin in the past that contains the ceil(Kth_neigh) nearest neighbor spike 
-        beforeSpikesFloor = find(beforeSpikes >= (floor(Kth_neigh(nt))), 1)-1; % Distance (in # of bins) to the bin in the past that contains the floor(Kth_neigh) nearest neighbor spike 
+        BeforeSpikes = cumsum(Spikes(nt,flip(1:Index(a))))-1; % cumulative number of other spikes in the present bin and in the precedent bins 
+        BeforeSpikesCeil = find(BeforeSpikes >= (ceil(Kth_neigh(nt))), 1)-1; % Distance (in # of bins) to the bin in the past that contains the ceil(Kth_neigh) nearest neighbor spike 
+        BeforeSpikesFloor = find(BeforeSpikes >= (floor(Kth_neigh(nt))), 1)-1; % Distance (in # of bins) to the bin in the past that contains the floor(Kth_neigh) nearest neighbor spike 
         
         % Treat the case where there are no Kth_neigh spikes in the future and
         % calculate the distance to the Kth_neigh future spike
-        if isempty(afterSpikesCeil) % There is no ceil(Kth_neigh) spikes in the future (not enough spikes after the current one)
-            if isempty(afterSpikesFloor) % And there is not even floor(Kth_neigh) spikes in the future (not enough spikes after the current one)
-                after = [];
+        if isempty(AfterSpikesCeil) % There is no ceil(Kth_neigh) spikes in the future (not enough spikes after the current one)
+            if isempty(AfterSpikesFloor) % And there is not even floor(Kth_neigh) spikes in the future (not enough spikes after the current one)
+                After = [];
             else % There is at least floor(Kth_neigh) spikes in the future
-                after = afterSpikesFloor; % Consider the distance to this floor(Kth_neigh) spike as our best estimate of the distance to the Kth_neigh spike in the future
+                After = AfterSpikesFloor; % Consider the distance to this floor(Kth_neigh) spike as our best estimate of the distance to the Kth_neigh spike in the future
             end
         elseif Kth_neigh(nt)==fix(Kth_neigh(nt)) % Kth_neigh is a whole number, afterSpikesCeil = afterSpikesFloor 
-            after = afterSpikesFloor;
+            After = AfterSpikesFloor;
         else % Linear interpolation between bin positions of floor(Kth_neigh) and ceil(Kth_neigh) nearest neighbor spike if Kth_neigh is not a whole number
-            after = afterSpikesFloor + (afterSpikesCeil - afterSpikesFloor) * (Kth_neigh(nt) - floor(Kth_neigh(nt))) / (ceil(Kth_neigh(nt)) - floor(Kth_neigh(nt))) ;
+            After = AfterSpikesFloor + (AfterSpikesCeil - AfterSpikesFloor) * (Kth_neigh(nt) - floor(Kth_neigh(nt))) / (ceil(Kth_neigh(nt)) - floor(Kth_neigh(nt))) ;
         end
         
         % Treat the case where there are no Kth_neigh spikes in the past and
         % calculate the distance to the Kth_neigh past spike
-        if isempty(beforeSpikesCeil) % There is no ceil(Kth_neigh) spikes in the past (not enough spikes before the current one)
-            if isempty(beforeSpikesFloor) % There is not even floor(Kth_neigh) spikes in the past (not enough spikes before the current one)
-                before = [];
+        if isempty(BeforeSpikesCeil) % There is no ceil(Kth_neigh) spikes in the past (not enough spikes before the current one)
+            if isempty(BeforeSpikesFloor) % There is not even floor(Kth_neigh) spikes in the past (not enough spikes before the current one)
+                Before = [];
             else % There is at least floor(Kth_neigh) spikes in the past
-                before = beforeSpikesFloor; % Consider the distance to this floor(Kth_neigh) spike as our best estimate of the distance to the Kth_neigh spike in the past
+                Before = BeforeSpikesFloor; % Consider the distance to this floor(Kth_neigh) spike as our best estimate of the distance to the Kth_neigh spike in the past
             end
         elseif Kth_neigh(nt)==fix(Kth_neigh(nt)) % Kth_neigh is a whole number, beforeSpikesCeil = beforeSpikesFloor 
-            before = beforeSpikesFloor;
+            Before = BeforeSpikesFloor;
         else % Linear interpolation between bin positions of floor(Kth_neigh) and ceil(Kth_neigh) nearest neighbor spike if Kth_neigh is not a whole number
-            before = beforeSpikesFloor + (beforeSpikesCeil - beforeSpikesFloor) * (Kth_neigh(nt) - floor(Kth_neigh(nt))) / (ceil(Kth_neigh(nt)) - floor(Kth_neigh(nt))) ;
+            Before = BeforeSpikesFloor + (BeforeSpikesCeil - BeforeSpikesFloor) * (Kth_neigh(nt) - floor(Kth_neigh(nt))) / (ceil(Kth_neigh(nt)) - floor(Kth_neigh(nt))) ;
         end
         
         % Find the minimum distance in number of bins to the Kth neighbor spike
-        BinSpikeh(ss) = min([before after]);
+        Dist2KthSpike(ss) = min([Before After]);
         
         % Treat the case when there is no Kth_neigh spikes both in the
         % future and in the past.Then set the distance to the distance to
         % the end or begining of the trial/row, whichever is the smallest
-        if isempty(BinSpikeh(ss))
-            BinSpikeh(ss) = min([index(a) size(Spikes,2) - index(a)]);
+        if isempty(Dist2KthSpike(ss))
+            Dist2KthSpike(ss) = min([Index(a) size(Spikes,2) - Index(a)]);
         end
         
         % Treat the case when several spikes are in the same bin and
         % Kth_neigh = 0. We want the minimum distance to be 0.5 and not 0
         % so the spikes are still convolved with a gaussian
-        if BinSpikeh(ss) == 0
-            BinSpikeh(ss) = 0.5;
+        if Dist2KthSpike(ss) == 0
+            Dist2KthSpike(ss) = 0.5;
         end
         
     end
@@ -164,7 +161,7 @@ end
 
 %% Convolve spikes with gaussian windows of width proportional to the distance to the Kth_neigh nearest spike
 % Extract the number of rows/trials in Spikes
-ntrials=size(Spikes,1);
+Ntrials=size(Spikes,1);
 
 
 % Initialize a figure that will plot the gaussian windows used for each
@@ -172,8 +169,8 @@ ntrials=size(Spikes,1);
 if Fig
     Ymaxcc = nan(length(SpikedBinID),1); % This will be used to scale the figure to the max of the gaussians
     F2=figure(2);
-    for t=1:ntrials
-        subplot(ntrials,1,t)
+    for t=1:Ntrials
+        subplot(Ntrials,1,t)
         cla
     end
 end
@@ -188,48 +185,48 @@ Hwidth.hwidth = nan(length(SpikedBinID),1);
 % Now loop through Bins containing spike(s) and do the convolution
 for a = 1:length(SpikedBinID)
     % set the width of the gaussian
-    hwidth=round(BinSpikeh(a)*Alpha_param); % we want the number of points of the gaussian to be proportional to alpha so that the distance to the nearest spike is always = 1sd
+    Hwidth=round(Dist2KthSpike(a)*Alpha_param); % we want the number of points of the gaussian to be proportional to alpha so that the distance to the nearest spike is always = 1sd
     
     % calculate the gaussian window
-    tempwin=gausswin(hwidth*2+1, Alpha_param)/sum(gausswin(hwidth*2+1, Alpha_param));
-    tempgauss = tempwin';
+    Tempwin=gausswin(Hwidth*2+1, Alpha_param)/sum(gausswin(Hwidth*2+1, Alpha_param));
+    Tempgauss = Tempwin';
     
     % retrieve the bin position using its linear index and store position
     % and width of the gaussian
-    [currenttime,trial]=ind2sub(size(trans_spikes),SpikedBinID(a));
-    Hwidth.trial(a) = trial;
-    Hwidth.timebin(a) = currenttime;
-    Hwidth.hwidth(a) = hwidth;
+    [Currenttime,Trial]=ind2sub(size(Trans_spikes),SpikedBinID(a));
+    Hwidth.trial(a) = Trial;
+    Hwidth.timebin(a) = Currenttime;
+    Hwidth.hwidth(a) = Hwidth;
     
     % Deal with cases where the width of the gaussian goes beyong the spike
     % train boundaries and set the begining and end indices where the
     % gaussian should be added to final gaussian filtered spike train(s)
-    if currenttime-(hwidth+1)<=0 % The gaussian left half width is larger than the distance of the spike to the begining of the spike train
-        startindex_temp = 1;
-        startindex_gauss = hwidth+1 -currenttime+1;
+    if Currenttime-(Hwidth+1)<=0 % The gaussian left half width is larger than the distance of the spike to the begining of the spike train
+        Startindex_temp = 1;
+        Startindex_gauss = Hwidth+1 -Currenttime+1;
     else
-        startindex_gauss=1;
-        startindex_temp = currenttime-hwidth;
+        Startindex_gauss=1;
+        Startindex_temp = Currenttime-Hwidth;
     end
-    if currenttime+hwidth>=size(Spikes,2) % The gaussian right half width is larger than the distance of the spike to the end of the spike train
-        endindex_temp=size(Spikes,2);
-        endindex_gauss = hwidth+1 + size(Spikes,2) -currenttime;
+    if Currenttime+Hwidth>=size(Spikes,2) % The gaussian right half width is larger than the distance of the spike to the end of the spike train
+        Endindex_temp=size(Spikes,2);
+        Endindex_gauss = Hwidth+1 + size(Spikes,2) -Currenttime;
     else
-        endindex_temp = currenttime + hwidth;
-        endindex_gauss = size(tempgauss,2);
+        Endindex_temp = Currenttime + Hwidth;
+        Endindex_gauss = size(Tempgauss,2);
     end
     
     % Convolve the gaussian window with the spike(s) and add to the output
     % matrix
-    Spikesfilt(trial,startindex_temp:endindex_temp)=Spikesfilt(trial,startindex_temp:endindex_temp) + Spikes(trial,currenttime) * tempgauss(startindex_gauss:endindex_gauss);
+    Spikesfilt(Trial,Startindex_temp:Endindex_temp)=Spikesfilt(Trial,Startindex_temp:Endindex_temp) + Spikes(Trial,Currenttime) * Tempgauss(Startindex_gauss:Endindex_gauss);
     
     % Fill in figure 2 with the gaussian window used for that bin
     if Fig
-        subplot(ntrials,1,trial)
-        plot(startindex_temp:endindex_temp, Spikes(trial,currenttime) *tempgauss(startindex_gauss:endindex_gauss),'-r')
-        Ymaxcc(a) = max(Spikes(trial,currenttime) *tempgauss(startindex_gauss:endindex_gauss));
+        subplot(Ntrials,1,Trial)
+        plot(Startindex_temp:Endindex_temp, Spikes(Trial,Currenttime) *Tempgauss(Startindex_gauss:Endindex_gauss),'-r')
+        Ymaxcc(a) = max(Spikes(Trial,Currenttime) *Tempgauss(Startindex_gauss:Endindex_gauss));
         hold on
-        plot([currenttime currenttime], [0 Spikes(trial,currenttime)*0.1],'-k','LineWidth',1.5)
+        plot([Currenttime Currenttime], [0 Spikes(Trial,Currenttime)*0.1],'-k','LineWidth',1.5)
         hold on
         xlim([0 size(Spikes,2)+1]);
         
@@ -240,7 +237,7 @@ end
 % Fine tune figure 2 (legend....)
 if Fig
     F2.Name='gaussian windows of all trials';
-    subplot(ntrials,1,ntrials)
+    subplot(Ntrials,1,Ntrials)
     xlabel('Time in time bins')
 %     Ymaxcc=nan(length(F2.Children),1);
 %     for cc=1:length(F2.Children)
@@ -264,8 +261,8 @@ if Fig
     YMAX2 = max(max(Spikesfilt));
     YMAX2=YMAX2+YMAX2/5;
     F3=figure(3);
-    for t=1:ntrials
-        subplot(ntrials,1,t)
+    for t=1:Ntrials
+        subplot(Ntrials,1,t)
         cla
         Spikes_local = find(Spikes(t,:));
         for ss=1:length(Spikes_local)
@@ -277,9 +274,9 @@ if Fig
         ylim([0 YMAX2])
     end
     F3.Name=sprintf('Gaussian filtered spike train Alpha=%d', Alpha_param);
-    subplot(ntrials,1,1)
+    subplot(Ntrials,1,1)
     ylabel('spike rate spike/timebin')
-    subplot(ntrials,1,ntrials)
+    subplot(Ntrials,1,Ntrials)
     xlabel('Time (time bins)')
     hold off
     figure(4)
