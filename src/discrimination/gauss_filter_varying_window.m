@@ -151,6 +151,13 @@ for nt=1:size(Spikes,1)
             BinSpikeh(ss) = min([index(a) size(Spikes,2) - index(a)]);
         end
         
+        % Treat the case when several spikes are in the same bin and
+        % Kth_neigh = 0. We want the minimum distance to be 0.5 and not 0
+        % so the spikes are still convolved with a gaussian
+        if BinSpikeh(ss) == 0
+            BinSpikeh(ss) = 0.5;
+        end
+        
     end
 end
 
