@@ -47,8 +47,12 @@ if ~status % the ssh and scp commands were successful
     tic
     while Wait4F==1
         try
-            Data=load(TempFile);
-            Wait4F=0;
+            if strcmp(ext, '.mat')
+                Data=load(TempFile);
+                Wait4F=0;
+            elseif strcmp(ext, '.h5')
+                Data = read_unit_h5file(TempFile, 'r');
+            end
         catch ME
         end
         ElapsedTime = toc;
