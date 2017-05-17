@@ -64,14 +64,14 @@ SpikedBinID =  find(Trans_spikes);
 if isempty(SpikedBinID)
     Spikesfilt=Spikes;
     Dist2KthSpike = [];
-    Hwidth = [];
+    HalfWidth = [];
     fprintf(1,'there are no spikes\n'); % the output is the unchanged input
     return;
 end
 if length(SpikedBinID)==1
     Spikesfilt=ones(size(Spikes))/size(Spikes,2); % the output is a matrix (same size as input) of ones divided over the number of rows/trials
     Dist2KthSpike = [];
-    Hwidth = [];
+    HalfWidth = [];
     fprintf(1,'only one spike\n');
     return;
 end
@@ -138,14 +138,14 @@ for nt=1:size(Spikes,1)
             Before = BeforeSpikesFloor + (BeforeSpikesCeil - BeforeSpikesFloor) * (Kth_neigh(nt) - floor(Kth_neigh(nt))) / (ceil(Kth_neigh(nt)) - floor(Kth_neigh(nt))) ;
         end
         
-        % Find the minimum distance in number of bins to the Kth neighbor spike
-        Dist2KthSpike(ss) = min([Before After]);
-        
         % Treat the case when there is no Kth_neigh spikes both in the
         % future and in the past.Then set the distance to the distance to
         % the end or begining of the trial/row, whichever is the smallest
-        if isempty(Dist2KthSpike(ss))
+        if isempty(Before) && isempty(After)
             Dist2KthSpike(ss) = min([Index(a) size(Spikes,2) - Index(a)]);
+        else
+            % Find the minimum distance in number of bins to the Kth neighbor spike
+            Dist2KthSpike(ss) = min([Before After]);
         end
         
         % Treat the case when several spikes are in the same bin and
@@ -179,16 +179,16 @@ end
 Spikesfilt = zeros(size(Spikes)); % This matrix will contain the gaussian filtered spike patterns
 Hwidth.trial = nan(length(SpikedBinID),1); % This structure contains the information to identify the width of the gaussian with which spikes are convolved
 Hwidth.timebin = nan(length(SpikedBinID),1);
-Hwidth.hwidth = nan(length(SpikedBinID),1);
+Hwidth.halfwidth = nan(length(SpikedBinID),1);
 
 
 % Now loop through Bins containing spike(s) and do the convolution
 for a = 1:length(SpikedBinID)
     % set the width of the gaussian
-    Hwidth=round(Dist2KthSpike(a)*Alpha_param); % we want the number of points of the gaussian to be proportional to alpha so that the distance to the nearest spike is always = 1sd
+    HalfWidth=round(Dist2KthSpike(a)*Alpha_param); % we want the number of points of the gaussian to be proportional to alpha so that the distance to the nearest spike is always = 1sd
     
     % calculate the gaussian window
-    Tempwin=gausswin(Hwidth*2+1, Alpha_param)/sum(gausswin(Hwidth*2+1, Alpha_param));
+    Tempwin=gausswin(HalfWidth*2+1, Alpha_param)/sum(gausswin(HalfWidth*2+1, Alpha_param));
     Tempgauss = Tempwin';
     
     % retrieve the bin position using its linear index and store position
@@ -196,23 +196,23 @@ for a = 1:length(SpikedBinID)
     [Currenttime,Trial]=ind2sub(size(Trans_spikes),SpikedBinID(a));
     Hwidth.trial(a) = Trial;
     Hwidth.timebin(a) = Currenttime;
-    Hwidth.hwidth(a) = Hwidth;
+    Hwidth.halfwidth(a) = HalfWidth;
     
     % Deal with cases where the width of the gaussian goes beyong the spike
     % train boundaries and set the begining and end indices where the
     % gaussian should be added to final gaussian filtered spike train(s)
-    if Currenttime-(Hwidth+1)<=0 % The gaussian left half width is larger than the distance of the spike to the begining of the spike train
+    if Currenttime-(HalfWidth+1)<=0 % The gaussian left half width is larger than the distance of the spike to the begining of the spike train
         Startindex_temp = 1;
-        Startindex_gauss = Hwidth+1 -Currenttime+1;
+        Startindex_gauss = HalfWidth+1 -Currenttime+1;
     else
         Startindex_gauss=1;
-        Startindex_temp = Currenttime-Hwidth;
+        Startindex_temp = Currenttime-HalfWidth;
     end
-    if Currenttime+Hwidth>=size(Spikes,2) % The gaussian right half width is larger than the distance of the spike to the end of the spike train
+    if Currenttime+HalfWidth>=size(Spikes,2) % The gaussian right half width is larger than the distance of the spike to the end of the spike train
         Endindex_temp=size(Spikes,2);
-        Endindex_gauss = Hwidth+1 + size(Spikes,2) -Currenttime;
+        Endindex_gauss = HalfWidth+1 + size(Spikes,2) -Currenttime;
     else
-        Endindex_temp = Currenttime + Hwidth;
+        Endindex_temp = Currenttime + HalfWidth;
         Endindex_gauss = size(Tempgauss,2);
     end
     
