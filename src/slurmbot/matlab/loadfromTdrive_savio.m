@@ -46,15 +46,20 @@ if ~status % the ssh and scp commands were successful
     Wait4F=1;
     tic
     while Wait4F==1
-        try
-            if strcmp(ext, '.mat')
+        if strcmp(ext, '.mat')
+            try
                 Data=load(TempFile);
                 Wait4F=0;
-            elseif strcmp(ext, '.h5')
-                Data = read_unit_h5file(TempFile, 'r');
+            catch ME
             end
-        catch ME
+        elseif strcmp(ext, '.h5')
+            try
+                Data = read_unit_h5file(TempFile, 'r');
+                Wait4F=0;
+            catch ME
+            end
         end
+        
         ElapsedTime = toc;
         if ElapsedTime>10*60
             error('Times out!! It takes more than 10 min to see the file\nsomething must be wrong with data transfer\nThe error message from load cmd is:\n%s', ME);
