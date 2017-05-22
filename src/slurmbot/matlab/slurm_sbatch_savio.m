@@ -62,11 +62,17 @@ function jobIds = slurm_sbatch_savio(cmds, jobParams, matlabRunner)
         jobParams.TimeLimit = '72:00:00';
     end
     
+    
+    
     jobIds = ones(1, length(cmds)) * -1;
     
     %% write out executable command in script
     % Name for the file
-       [Pathstr,Name,Ext]=fileparts(cmds{1});
+    if ~isfield(jobParams, 'JobName')
+        [Pathstr,Name,Ext]=fileparts(cmds{1});
+    else
+        Name = jobParams.JobName;
+    end
        if isfield(jobParams, 'K')
            tempOut = sprintf('ExJob_%s_%d.txt', Name, jobParams.K);
        else
