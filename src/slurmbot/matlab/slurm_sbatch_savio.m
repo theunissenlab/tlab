@@ -73,8 +73,8 @@ function jobIds = slurm_sbatch_savio(cmds, jobParams, matlabRunner)
     else
         Name = jobParams.JobName;
     end
-       if isfield(jobParams, 'K')
-           tempOut = sprintf('ExJob_%s_%d.txt', Name, jobParams.K);
+       if isfield(jobParams, 'Type')
+           tempOut = sprintf('ExJob_%s_%s.txt', Name, jobParams.Type);
        else
            tempOut = ['ExJob' Name '.txt'];
        end
