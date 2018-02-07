@@ -44,7 +44,7 @@ function jobIds = slurm_sbatch_savio(cmds, jobParams, matlabRunner)
         jobParams.Partition = 'savio';
     end
     if ~isfield(jobParams, 'Account')
-        jobParams.Account = 'fc_birdpow';
+        jobParams.Account = 'ac_birdpow'; % ac_birdpow is the paid allowance, fc_birdpow is the free faculty allowance
     end
     if ~isfield(jobParams, 'qos')
         jobParams.Qos = 'savio_normal';

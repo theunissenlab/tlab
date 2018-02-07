@@ -11,7 +11,7 @@ function [Status]=transfertoTdrive_savio(From_file, To_file, KeepF)
 %	User username
 %	Port 22
 %	IdentityFile ~/.ssh/id_rsasavio
-%	HostName jlg.berkeley.edu
+%	HostName fet.berkeley.edu
 
 % Input variables:   From_file: path and name of the file to be transfered
 %                    To_file: path and name of the file location on Tdrive
