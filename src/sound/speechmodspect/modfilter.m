@@ -29,13 +29,14 @@ increment = fix(0.001*samprate);           % Sampling rate of spectrogram in num
 ampsrate = samprate/increment;
 f_low=250;                                 % Lower frequency bounds to get average amplitude in spectrogram
 f_high=10000;                              % Upper frequency bound to get average amplitude in spectrogram
-sil_len=500;                               % Amount of silence added at each end of the sound and then subracted
-tone_ramp=25;                              % tone ramp in ms
+sil_len=0;                                 % Amount of silence added at each end of the sound and then subracted
+sig_len=0.5;                               % duration of signal
+tone_ramp=25;                              % tone ramp in ms for output 
 
 debug_fig = 1;                             % Set to 1 to see spectrograms, 2 to see just resulting spectra, 0 to run many files without creating figures.
-save_fig = 1;                              % Set to 1 to save data to recreate images
+save_fig = 0;                              % Set to 1 to save data to recreate images
 data_path = './DataFiles/';                % Specify folder if you wish to save data
-no_it = 20;                                % The number of iterations for the spectrum inversion
+no_it = 100;                                % The number of iterations for the spectrum inversion
 logflg = 1;                                % Perform the mod spectrum in log or linear amplitudes
 DBNOISE = 80;                              % dB in Noise for the log compression - values below will be set to zero.
 % This defines the ramp of the gain from 0 to 1
@@ -46,6 +47,10 @@ dti=1;                                     % One Hz ramp in time
 soundlen = length(sound_in);
 % Force sound_in to have zero mean.
 sound_in = sound_in - mean(sound_in);
+
+soundDur = soundlen/samprate;
+tbeg = sil_len + (soundDur-sig_len)/2.0;
+tend = tbeg+sig_len;
 
 % fprintf(1,'Length of sound is %f (ms)\n', soundlen*1000.0/samprate);
 
@@ -70,6 +75,9 @@ fl = floor(f_low/fstep)+1;        % low frequency index to get average spectrogr
 fh = ceil(f_high/fstep)+1;        % upper frequency index to get average spectrogram amp
 sabs = abs(s);
 sphase = s;
+ibeg = find(to >= tbeg, 1);
+iend = find(to > tend, 1);
+
 %clear s;
 maxsabs = max(max(sabs));
 
@@ -310,6 +318,20 @@ new_fabs = newamp_fabs.*exp(complex(0,newphase_fabs));
 new_sabs = real(ifft2(new_fabs));
 clear newamp_fabs newphase_fabs;
 
+new_sabs = new_sabs(:, ibeg:iend);
+sphase = sphase(:, ibeg:iend);
+max_sabs = max(max(new_sabs));
+min_sabs = min(min(new_sabs));
+drange = max_sabs - min_sabs;
+
+if ( drange < DBNOISE )
+    new_sabs = new_sabs*DBNOISE/drange;
+end
+max_sabs = max(max(new_sabs));
+new_sabs = new_sabs - max_sabs + DBNOISE;
+new_sabs(new_sabs<0) = 0;
+
+
 % The amplitude must also stay positive
 %new_sabs(find(new_sabs< 0.0)) = 0.0;
 
@@ -334,6 +356,7 @@ if (debug_fig==1)
 end
 
 %         plot the desired new spectrogram
+
 if (logflg)
     new_sabsDisp = new_sabs;
 else
@@ -433,8 +456,8 @@ if save_fig
 end
 
 % The output sound is in the middle and we add a ramp
-sound_out = output(1+nzeros:nzeros+soundlen);
-sound_out = addramp(sound_out, samprate, tone_ramp);
+% sound_out = output(1+nzeros:nzeros+soundlen);
+sound_out = addramp(output, samprate, tone_ramp);
 power_out = std(sound_out);
 power_in = std(sound_in);
 
