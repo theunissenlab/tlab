@@ -16,7 +16,8 @@ songfilt_args.db_att = 0;
 duration=0.35; % duration in s of cuts
 endMax = 4.0;  % find the maximum in the first 4 s
 
-TDTsamprate = 24414;
+% TDTsamprate = 24414;
+TDTsamprate = 44100;       % This is not the TDTsamprate but using it so that I don't have to make too many mods in the code.
 
 % Generate filter
 nfilt = 512;
@@ -33,7 +34,7 @@ if nargin<1
     if ismac()
         [status username] = system('who am i');
         if strcmp(strtok(username), 'frederictheunissen')
-            DataBasePath='/Users/frederictheunissen/Documents/Data/Julie/FullVocalizationBank';
+            DataBasePath='/Users/frederictheunissen/Google Drive/Data/Julie/FullVocalizationBank';
         elseif strcmp(strtok(username), 'elie')
             DataBasePath='/Users/elie/Documents/ManipBerkeley/Recordings/group recordings';
         end
@@ -50,11 +51,15 @@ nfiles = size(SoundFiles,1);
 
 % Initialize some data
 ncutsTot = 0;
-soundCutsTot = [];
-spectroCutsTot = [];
+soundCutsTot = cell(1,nfiles);
+spectroCutsTot = cell(1,nfiles);
+indCutsTot = cell(1,nfiles);
+soundNameCuts = cell(1,nfiles);
+birdNameCuts= cell(1,nfiles);
+vocTypeCuts= cell(1,nfiles);
 
 % Make a file to save power
-powerFile = fullfile(DataBasePath, 'ampcheck.txt');
+powerFile = fullfile(DataBasePath, 'ampcheck2020.txt');
 fidPower = fopen(powerFile, 'w');
 
 %Loop through files, detect sound periods
@@ -66,8 +71,12 @@ for isound = 1:nfiles
     [sound_temp, samprate] = audioread(fullfile(DataBasePath, stim_name));
     
     % We are changing to the TDT samprate...
-    sound_in = resample(sound_temp, TDTsamprate, samprate);
-    samprate = TDTsamprate;   
+    if (samprate ~= TDTsamprate )
+        sound_in = resample(sound_temp, TDTsamprate, samprate);
+        samprate = TDTsamprate;  
+    else
+        sound_in = sound_temp;
+    end
     
     % Read the callid.
     [SoundPath, SoundName, ext]=fileparts(stim_name);
@@ -80,7 +89,7 @@ for isound = 1:nfiles
     end
     
     % Read the Bird info file
-    fid = fopen('/Users/frederictheunissen/Documents/Data/Julie/FullVocalizationBank/Birds_List_Acoustic.txt', 'r');
+    fid = fopen('/Users/frederictheunissen/Google Drive/Data/Julie/FullVocalizationBank/Birds_List_Acoustic.txt', 'r');
     birdInfo = textscan(fid, '%s %s %s %s %s %d');
     nInfo = length(birdInfo{1});
     fclose(fid);
@@ -110,7 +119,7 @@ for isound = 1:nfiles
     else
         sound_in = filtfilt(call_filter, 1, sound_in);
     end
-    fprintf(fidPower, '%s %s %d %f\n', birdname, voctype, recLevel, std(sound_in));
+    fprintf(fidPower, '%s %s %s %d %f\n', SoundName, birdname, voctype, recLevel, std(sound_in));
     
     % Find the enveloppe
     amp_env = enveloppe_estimator(sound_in, samprate, 20, samprate);
@@ -160,26 +169,33 @@ for isound = 1:nfiles
         plot_sound_selection_amp(voctype, sound_in, samprate, amp_env, max_min_ind);
     end
     
-    [ncuts soundCuts spectroCuts to fo] = cut_sound_selection_amp(sound_in, samprate, amp_env, max_min_ind, duration, pl);
+    [ncuts soundCuts spectroCuts to fo indCuts] = cut_sound_selection_amp(sound_in, samprate, amp_env, max_min_ind, duration, pl);
     
-    for ic=ncutsTot+1:ncutsTot+ncuts
+    
+    for ic=(ncutsTot+1):(ncutsTot+ncuts)
+        soundNameCuts{ic} = SoundName;
         birdNameCuts{ic} = birdname;
         vocTypeCuts{ic} = voctype;
     end
     
     ncutsTot = ncutsTot + ncuts;
-    soundCutsTot = vertcat(soundCutsTot, soundCuts);
-    spectroCutsTot = vertcat(spectroCutsTot, spectroCuts); 
+    soundCutsTot{isound} = soundCuts;
+    spectroCutsTot{isound} = spectroCuts; 
+    indCutsTot{isound} = indCuts;
     
      if pl
         pause();
     end
 end
 
+soundCutsAll = vertcat(soundCutsTot{:});
+spectroCutsAll = vertcat(spectroCutsTot{:}); 
+indCutsAll = vertcat(indCutsTot{:});
+
 fclose(fidPower);
 
    
 %% Save data to mat file
-save -V7.3 /Users/frederictheunissen/Documents/Data/Julie/FullVocalizationBank/vocCuts.mat ncutsTot to fo ncutsTot soundCutsTot spectroCutsTot birdNameCuts vocTypeCuts samprate
+save('/Users/frederictheunissen/Google Drive/Data/Julie/FullVocalizationBank/vocCuts2020.mat', 'ncutsTot', 'to', 'fo', 'ncutsTot', 'soundCutsAll', 'spectroCutsAll', 'soundNameCuts', 'indCutsAll', 'birdNameCuts', 'vocTypeCuts', 'samprate', '-V7.3');
 
      

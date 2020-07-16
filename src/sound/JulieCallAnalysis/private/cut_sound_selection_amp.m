@@ -1,4 +1,4 @@
-function [ncuts soundCuts spectroCuts to fo] = cut_sound_selection_amp(sound_in, samprate, amp_env, max_min_ind, duration, pl)
+function [ncuts soundCuts spectroCuts to fo indCuts] = cut_sound_selection_amp(sound_in, samprate, amp_env, max_min_ind, duration, pl)
 % Cuts the calls into sections based on max_min and centers then on peak
 % enveloppe.  Returns calls that are "duration" long. Duration is in
 % seconds.
@@ -48,6 +48,7 @@ clear sound_temp
 % Make space of the return values
 soundCuts = zeros(ncuts, cutPts);
 spectroCuts = zeros(ncuts, nf*nt);
+indCuts = zeros(ncuts, 2);
 
 % Cut the sounds and calculate the spectrograms. 
 ic = 0;
@@ -100,6 +101,8 @@ for i = 1:ncuts_max
         ind_end_final = ind_end_tot;
     end
     
+    indCuts(ic,1) = ind_beg_final;
+    indCuts(ic,2) = ind_end_final;
     soundCuts(ic, db:de) = sound_in(ind_beg_final:ind_end_final);
     [s, to, fo, pg] = GaussianSpectrum(soundCuts(ic, :), increment, winLength, samprate); 
     logB = 20*log10(abs(s));

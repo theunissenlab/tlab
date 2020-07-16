@@ -250,7 +250,7 @@ def coherence_windowed(time_series,win_length=1024,overlap=None,pad=False,**kwar
     else:
         n_overlap = overlap
         overlap = TimeArray(float(n_overlap)/time_series.sampling_rate)
-        
+:        
     # Convert win_length to TimeArray
     if not isinstance(win_length,TimeInterface):
         win_length = TimeArray(float(win_length)/time_series.sampling_rate)
